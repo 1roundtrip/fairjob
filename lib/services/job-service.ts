@@ -4,6 +4,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { type EducationLevel } from "@/lib/constants";
+import { CHINA_CITIES } from "@/lib/cities";
 
 export interface JobListQuery {
   page?: number;
@@ -22,6 +23,23 @@ export interface JobListResult {
   pageSize: number;
 }
 
+function getLocationFilter(location: string) {
+  const province = CHINA_CITIES.find(
+    (p) => p.province === location || p.province.replace(/省|市|自治区|壮族自治区|回族自治区|维吾尔自治区/g, "") === location
+  );
+
+  if (province && province.cities.length > 1) {
+    return {
+      OR: [
+        { location: { contains: location } },
+        ...province.cities.map((city) => ({ location: { contains: city } })),
+      ],
+    };
+  }
+
+  return { location: { contains: location } };
+}
+
 /**
  * 查询职位列表
  * 默认按发布时间倒序（反算法原则：不根据用户行为调整）
@@ -32,6 +50,7 @@ export async function getJobList(query: JobListQuery): Promise<JobListResult> {
   const skip = (page - 1) * pageSize;
 
   const where: any = {};
+  const andConditions: any[] = [];
 
   if (query.keyword) {
     where.OR = [
@@ -41,7 +60,12 @@ export async function getJobList(query: JobListQuery): Promise<JobListResult> {
   }
 
   if (query.location) {
-    where.location = { contains: query.location };
+    const locFilter = getLocationFilter(query.location);
+    if (locFilter.OR) {
+      andConditions.push(locFilter);
+    } else {
+      Object.assign(where, locFilter);
+    }
   }
 
   if (query.education && query.education.length > 0) {
@@ -50,6 +74,10 @@ export async function getJobList(query: JobListQuery): Promise<JobListResult> {
 
   if (query.source) {
     where.sourceName = query.source;
+  }
+
+  if (andConditions.length > 0) {
+    where.AND = andConditions;
   }
 
   let orderBy: any = { publishedAt: "desc" };
@@ -105,7 +133,12 @@ export async function getRandomJobs(
   }
 
   if (location) {
-    where.location = { contains: location };
+    const locFilter = getLocationFilter(location);
+    if (locFilter.OR) {
+      where.AND = [locFilter];
+    } else {
+      Object.assign(where, locFilter);
+    }
   }
 
   // 获取所有符合条件的职位

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { EDUCATION_LABELS, ALL_EDUCATION_OPTIONS, type EducationLevel } from "@/lib/constants";
+import { CHINA_CITIES, POPULAR_CITIES } from "@/lib/cities";
 import { cn } from "@/lib/utils";
 
 export default function FilterBar({ className }: { className?: string }) {
@@ -12,6 +13,9 @@ export default function FilterBar({ className }: { className?: string }) {
   const [keyword, setKeyword] = useState(searchParams.get("q") || "");
   const [location, setLocation] = useState(searchParams.get("loc") || "");
   const [showEduDropdown, setShowEduDropdown] = useState(false);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState<string>("");
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
 
   // 从 URL 解析初始学历筛选
   const getInitialEducation = (): EducationLevel[] => {
@@ -45,6 +49,23 @@ export default function FilterBar({ className }: { className?: string }) {
     setSelectedEdu((prev) =>
       prev.includes(edu) ? prev.filter((e) => e !== edu) : [...prev, edu]
     );
+  };
+
+  const selectCity = (city: string) => {
+    setLocation(city);
+    setShowCityDropdown(false);
+    const params = new URLSearchParams(searchParams.toString());
+    if (city) {
+      params.set("loc", city);
+    } else {
+      params.delete("loc");
+    }
+    params.set("page", "1");
+    router.push(`/?${params.toString()}`);
+  };
+
+  const selectProvince = (province: string) => {
+    setSelectedProvince(province);
   };
 
   const handleSearch = () => {
@@ -92,15 +113,137 @@ export default function FilterBar({ className }: { className?: string }) {
           />
         </div>
 
-        <div className="w-full sm:w-40">
-          <input
-            type="text"
-            placeholder="城市"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+        <div className="relative w-full sm:w-44">
+          <div className="flex">
+            <input
+              type="text"
+              placeholder="城市"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowCityDropdown(!showCityDropdown)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          {showCityDropdown && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-start sm:justify-start sm:relative">
+              <div
+                className="fixed inset-0 bg-black/20 sm:hidden"
+                onClick={() => setShowCityDropdown(false)}
+              />
+              <div className="relative w-full sm:w-80 bg-white rounded-t-xl sm:rounded-lg border border-gray-200 shadow-lg overflow-hidden mb-safe sm:mt-2" ref={cityDropdownRef}>
+                <div className="p-3 border-b border-gray-100 flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">选择城市</span>
+                  <button
+                    onClick={() => setShowCityDropdown(false)}
+                    className="p-1 text-gray-400 hover:text-gray-600 sm:hidden"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="p-3 border-b border-gray-100">
+                  <p className="text-xs text-gray-500 mb-2">热门城市</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => selectCity("")}
+                      className={cn(
+                        "px-3 py-1 rounded-full text-xs border transition-colors",
+                        !location
+                          ? "bg-blue-100 text-blue-700 border-blue-200"
+                          : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                      )}
+                    >
+                      全部
+                    </button>
+                    {POPULAR_CITIES.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => selectCity(city)}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs border transition-colors",
+                          location === city
+                            ? "bg-blue-100 text-blue-700 border-blue-200"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-blue-300"
+                        )}
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex">
+                  <div className="w-24 border-r border-gray-100 max-h-64 overflow-y-auto bg-gray-50">
+                    {CHINA_CITIES.map((item) => (
+                      <button
+                        key={item.province}
+                        onClick={() => selectProvince(item.province)}
+                        className={cn(
+                          "w-full px-3 py-2 text-left text-xs transition-colors",
+                          selectedProvince === item.province
+                            ? "bg-white text-blue-600 font-medium"
+                            : "text-gray-600 hover:bg-gray-100"
+                        )}
+                      >
+                        {item.province}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex-1 max-h-64 overflow-y-auto p-2">
+                    {selectedProvince ? (
+                      <div className="space-y-1">
+                        <p className="text-xs text-gray-400 px-2 py-1">
+                          {selectedProvince} · 按省份筛选
+                        </p>
+                        <button
+                          onClick={() => selectCity(selectedProvince)}
+                          className={cn(
+                            "w-full px-3 py-2 text-left text-sm rounded-md transition-colors",
+                            location === selectedProvince
+                              ? "bg-blue-50 text-blue-700"
+                              : "text-gray-700 hover:bg-gray-50"
+                          )}
+                        >
+                          <span className="text-blue-500 mr-1">●</span>
+                          全省 ({selectedProvince})
+                        </button>
+                        {CHINA_CITIES.find((p) => p.province === selectedProvince)?.cities.map(
+                          (city) => (
+                            <button
+                              key={city}
+                              onClick={() => selectCity(city)}
+                              className={cn(
+                                "w-full px-3 py-2 text-left text-sm rounded-md transition-colors",
+                                location === city
+                                  ? "bg-blue-50 text-blue-700"
+                                  : "text-gray-700 hover:bg-gray-50"
+                              )}
+                            >
+                              {city}
+                            </button>
+                          )
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 text-center py-8">
+                        请选择省份
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="relative">
