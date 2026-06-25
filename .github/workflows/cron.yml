@@ -1,0 +1,144 @@
+name: FairJob Scheduled Tasks
+
+# GitHub Actions 备份定时任务
+# 当 Vercel Cron 不可用时，这些任务会通过 GitHub Actions 执行
+# Vercel 免费版的 Cron Jobs 有每月 3000 分钟限制，此文件作为备用
+
+on:
+  schedule:
+    # 每小时抓取一次（与 Vercel Cron 一致）
+    - cron: "0 * * * *"
+
+    # 每天凌晨 3:05 学历回填（Vercel 3am 之后错开）
+    - cron: "5 3 * * *"
+
+    # 每天凌晨 4:10 去重清理
+    - cron: "10 4 * * *"
+
+    # 每天上午 9:10 网申截止提醒
+    - cron: "10 9 * * *"
+
+  # 可手动触发（GitHub Actions 页面 → Workflows → FairJob Scheduled Tasks → Run workflow）
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "选择要运行的任务"
+        required: true
+        default: "crawl"
+        type: choice
+        options:
+          - crawl
+          - backfill
+          - cleanup
+          - reminder
+          - full
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  BING_SEARCH_API_KEY: ${{ secrets.BING_SEARCH_API_KEY }}
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  CRON_SECRET: ${{ secrets.CRON_SECRET }}
+  BARK_WEBHOOK_URL: ${{ secrets.BARK_WEBHOOK_URL }}
+  SERVERCHAN_SENDKEY: ${{ secrets.SERVERCHAN_SENDKEY }}
+  DINGTALK_WEBHOOK_URL: ${{ secrets.DINGTALK_WEBHOOK_URL }}
+
+jobs:
+  crawl:
+    name: 增量抓取
+    if: github.event_name == 'schedule' || github.event.inputs.task == 'crawl' || github.event.inputs.task == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run crawl
+        run: curl -X GET "${{ secrets.VERCEL_URL }}/api/cron/incremental-crawl" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+        continue-on-error: true
+
+  backfill:
+    name: 学历回填
+    if: github.event_name == 'schedule' || github.event.inputs.task == 'backfill' || github.event.inputs.task == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run backfill
+        run: curl -X GET "${{ secrets.VERCEL_URL }}/api/cron/education-backfill" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+        continue-on-error: true
+
+  cleanup:
+    name: 去重与清理
+    if: github.event_name == 'schedule' || github.event.inputs.task == 'cleanup' || github.event.inputs.task == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run cleanup
+        run: curl -X GET "${{ secrets.VERCEL_URL }}/api/cron/cleanup" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+        continue-on-error: true
+
+  reminder:
+    name: 网申截止提醒
+    if: github.event_name == 'schedule' || github.event.inputs.task == 'reminder' || github.event.inputs.task == 'full'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run reminder
+        run: curl -X GET "${{ secrets.VERCEL_URL }}/api/cron/deadline-reminder" -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
+        continue-on-error: true

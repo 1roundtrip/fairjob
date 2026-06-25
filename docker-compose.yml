@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: job-aggregator-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/jobs.db
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+      - API_V1_PREFIX=/api/v1
+      - PROJECT_NAME=聚合求职平台
+      - DEBUG=true
+    networks:
+      - job-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: job-aggregator-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=/api/v1
+    depends_on:
+      - backend
+    networks:
+      - job-network
+    restart: unless-stopped
+
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    container_name: job-aggregator-scraper
+    volumes:
+      - ./scraper:/app
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/jobs.db
+      - BACKEND_API_URL=http://backend:8000/api/v1
+      - SCRAPE_INTERVAL_MINUTES=60
+      - LOG_LEVEL=INFO
+    depends_on:
+      - backend
+    networks:
+      - job-network
+    restart: unless-stopped
+
+networks:
+  job-network:
+    driver: bridge
+
+volumes:
+  data:

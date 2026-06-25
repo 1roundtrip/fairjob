@@ -1,0 +1,81 @@
+# 企业官网校招页配置
+# 格式:
+#   - name: 公司名
+#     url: 校招页面 URL
+#     type: 类型 (央国企/国企/民企/外企)
+
+# 央国企
+- name: 国家电网
+  url: https://zhaopin.sgcc.com.cn/
+  type: 央企
+
+- name: 南方电网
+  url: https://campus.csg.cn/
+  type: 央企
+
+- name: 中国烟草
+  url: https://www.tobacco.gov.cn/
+  type: 央企
+
+- name: 中石油
+  url: https://zhaopin.cnpc.com.cn/
+  type: 央企
+
+- name: 中石化
+  url: https://job.sinopec.com/
+  type: 央企
+
+# 国企
+- name: 中国移动
+  url: https://job.10086.cn/
+  type: 国企
+
+- name: 中国联通
+  url: https://chinaunicom.zhaopin.com/
+  type: 国企
+
+- name: 中国电信
+  url: https://campus.chinatelecom.com.cn/
+  type: 国企
+
+- name: 中国邮政
+  url: https://chinapost.zhiye.com/campus
+  type: 国企
+
+# 科技民企
+- name: 华为
+  url: https://career.huawei.com/reccampportal/portal5/campus-recruitment.html
+  type: 民企
+
+- name: 字节跳动
+  url: https://jobs.bytedance.com/campus
+  type: 民企
+
+- name: 腾讯
+  url: https://join.qq.com/
+  type: 民企
+
+- name: 阿里巴巴
+  url: https://talent.alibaba.com/campus/
+  type: 民企
+
+- name: 百度
+  url: https://talent.baidu.com/external/baidu/campus.html
+  type: 民企
+
+- name: 小米
+  url: https://www.xiaomi.com/about/careers
+  type: 民企
+
+# 外企
+- name: 微软
+  url: https://careers.microsoft.com/students
+  type: 外企
+
+- name: Google
+  url: https://careers.google.com/students/
+  type: 外企
+
+- name: 亚马逊
+  url: https://www.amazon.jobs/en/teams/university
+  type: 外企

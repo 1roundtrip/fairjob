@@ -1,0 +1,187 @@
+// FairJob 求职聚合平台 - Prisma Schema
+// 数据库: SQLite / Turso (libSQL) 兼容
+// 枚举类型用 String 模拟，Json 用 String 模拟（SQLite 限制）
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 枚举值常量（TypeScript 层定义，这里用 String 存储） ====================
+// EducationLevel: BACHELOR_AND_ABOVE | BACHELOR_ONLY | ASSOCIATE_AND_ABOVE | ASSOCIATE_ONLY | NO_REQUIREMENT | UNKNOWN
+// SourceType: OFFICIAL_PLATFORM | UNIVERSITY | ENTERPRISE | RSS | SEARCH | OTHER
+// ParserType: RSS | UNIVERSAL | API | MANUAL
+// ReviewStatus: PENDING | APPROVED | REJECTED
+
+// ==================== 数据源模型 ====================
+
+model Source {
+  id            Int        @id @default(autoincrement())
+  name          String     // 来源名称
+  url           String     // 来源主页 URL
+  type          String     // SourceType: OFFICIAL_PLATFORM / UNIVERSITY / ENTERPRISE / RSS / SEARCH / OTHER
+  parserType    String     // ParserType: RSS / UNIVERSAL / API / MANUAL
+  isActive      Boolean    @default(true)
+  lastCrawledAt DateTime?
+  crawlInterval Int        @default(120)  // 抓取间隔(分钟)
+  successCount  Int        @default(0)
+  failCount     Int        @default(0)
+  totalJobs     Int        @default(0)
+  config        String?    // JSON 字符串，额外配置
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  jobs          Job[]
+  reviewJobs    ReviewJob[]
+
+  @@index([type, isActive])
+  @@index([lastCrawledAt])
+}
+
+// ==================== 职位模型 (主表) ====================
+
+model Job {
+  id            Int        @id @default(autoincrement())
+  title         String     // 职位名称
+  company       String     // 公司名称
+  location      String?    // 工作地点
+  salary        String?    // 薪资描述
+  salaryMin     Float?     // 最低薪资
+  salaryMax     Float?     // 最高薪资
+  description   String?    // 职位描述
+  requirements  String?    // 任职要求
+
+  // 核心字段: 学历要求 (EducationLevel)
+  education     String     @default("UNKNOWN")
+
+  jobType       String?    // 全职/实习/校招
+  experience    String?    // 工作经验要求
+  publishedAt   DateTime?  // 发布时间
+
+  // 来源与链接
+  sourceId      Int?
+  source        Source?    @relation(fields: [sourceId], references: [id])
+  sourceName    String?    // 来源名称冗余
+  sourceUrl     String     // 原始链接 (唯一去重键)
+
+  // 合并去重相关
+  mergedJobIds  String?    // JSON 字符串，合并的其他职位 ID 列表
+  isMerged      Boolean    @default(false)
+  mergeCount    Int        @default(1)
+
+  // 质量评分
+  confidence    Float      @default(0)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([sourceUrl])
+  @@index([education])
+  @@index([publishedAt])
+  @@index([company, title])
+  @@index([sourceId])
+  @@index([createdAt])
+}
+
+// ==================== 待审核职位模型 ====================
+
+model ReviewJob {
+  id            Int        @id @default(autoincrement())
+  title         String
+  company       String
+  location      String?
+  salary        String?
+  description   String?
+  requirements  String?
+  education     String     @default("UNKNOWN") // EducationLevel
+  suggestedEdu  String?    // EducationLevel | null
+  sourceUrl     String
+  sourceId      Int?
+  source        Source?    @relation(fields: [sourceId], references: [id])
+  confidence    Float      @default(0)
+  rawHtml       String?    // 原始 HTML 片段
+  status        String     @default("PENDING") // ReviewStatus
+  reviewNote    String?
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([status])
+  @@index([education])
+  @@index([createdAt])
+}
+
+// ==================== 抓取日志模型 ====================
+
+model CrawlLog {
+  id            Int        @id @default(autoincrement())
+  sourceId      Int?
+  sourceName    String?
+  jobsFound     Int        @default(0)
+  jobsAdded     Int        @default(0)
+  jobsMerged    Int        @default(0)
+  jobsReview    Int        @default(0)
+  errorMessage  String?
+  durationMs    Int?
+  createdAt     DateTime   @default(now())
+
+  @@index([sourceId])
+  @@index([createdAt])
+}
+
+// ==================== 公司出现统计 ====================
+
+model CompanyStat {
+  id            Int        @id @default(autoincrement())
+  companyName   String     @unique
+  jobCount      Int        @default(0)
+  dayCount      Int        @default(1)
+  avgJobsPerDay Float      @default(0)
+  lastSeen      DateTime   @default(now())
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([avgJobsPerDay])
+}
+
+// ==================== 网申截止日历 (阶段三) ====================
+
+model Event {
+  id              Int       @id @default(autoincrement())
+  company         String    // 公司名
+  title           String    // 岗位/批次名称
+  deadlineDate    DateTime  // 截止日期
+  targetEducation String    @default("UNKNOWN") // EducationLevel
+  sourceUrl       String    // 网申链接
+  note            String?   // 备注
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([deadlineDate])
+  @@index([targetEducation])
+}
+
+// ==================== 收藏夹 (阶段三) ====================
+
+model Favorite {
+  id         Int       @id @default(autoincrement())
+  jobId      Int?      // 关联的职位ID
+  title      String    // 职位名称（冗余）
+  company    String    // 公司名
+  location   String?   // 地点
+  education  String    // 学历要求
+  jobType    String?   // 类型
+  sourceUrl  String    // 原始链接
+  sourceName String?   // 来源
+  favNote    String?   // 个人备注
+  createdAt  DateTime  @default(now())
+
+  @@unique([sourceUrl])
+  @@index([createdAt])
+}
