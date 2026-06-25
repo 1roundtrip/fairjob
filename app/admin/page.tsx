@@ -21,9 +21,14 @@ export default async function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-gray-900">管理后台</h1>
-          <span className="text-sm text-gray-500">
-            FairJob 平台管理
-          </span>
+          <form action="/api/admin/logout" method="post">
+            <button
+              type="submit"
+              className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+            >
+              退出登录
+            </button>
+          </form>
         </div>
 
         {/* 统计卡片 */}
