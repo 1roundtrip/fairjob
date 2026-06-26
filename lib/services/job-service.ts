@@ -107,6 +107,8 @@ export async function getJobList(query: JobListQuery): Promise<JobListResult> {
         sourceUrl: true,
         isMerged: true,
         mergeCount: true,
+        failCount: true,
+        confidence: true,
         createdAt: true,
       },
     }),
