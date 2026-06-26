@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ClientLayout from "@/components/ClientLayout";
 
 export const metadata: Metadata = {
   title: "FairJob - 公平求职聚合平台",
@@ -14,8 +15,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className="min-h-screen font-sans antialiased">
-        {children}
+      <body className="min-h-screen font-sans antialiased flex flex-col">
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
