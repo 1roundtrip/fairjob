@@ -1,45 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import EducationBadge from "@/components/EducationBadge";
 import { EDUCATION_LABELS } from "@/lib/constants";
-
-interface Favorite {
-  id: number;
-  title: string;
-  company: string;
-  location: string | null;
-  education: string;
-  jobType: string | null;
-  sourceUrl: string;
-  sourceName: string | null;
-  createdAt: string;
-}
+import { useFavorites } from "@/components/FavoriteButton";
 
 export default function FavoritesPage() {
-  const [favorites, setFavorites] = useState<Favorite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { favorites, removeFavorites } = useFavorites();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filterEdu, setFilterEdu] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
-
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
-
-  const fetchFavorites = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/favorites");
-      if (res.ok) {
-        const data = await res.json();
-        setFavorites(data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filtered = favorites.filter((f) => {
     if (filterEdu !== "all" && f.education !== filterEdu) return false;
@@ -53,65 +24,39 @@ export default function FavoritesPage() {
   );
 
   const toggleSelect = (url: string) => {
-    const next = new Set(selected);
-    if (next.has(url)) {
-      next.delete(url);
-    } else {
-      next.add(url);
-    }
-    setSelected(next);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(url) ? next.delete(url) : next.add(url);
+      return next;
+    });
   };
 
   const selectAll = () => {
-    if (selected.size === filtered.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(filtered.map((f) => f.sourceUrl)));
-    }
+    setSelected(selected.size === filtered.length ? new Set() : new Set(filtered.map((f) => f.sourceUrl)));
   };
 
-  const removeSelected = async () => {
+  const removeSelected = () => {
     if (selected.size === 0) return;
     if (!confirm(`确定删除选中的 ${selected.size} 条收藏？`)) return;
-
-    for (const url of selected) {
-      await fetch("/api/favorites/remove", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceUrl: url }),
-      });
-    }
+    removeFavorites(Array.from(selected));
     setSelected(new Set());
-    fetchFavorites();
   };
 
   const exportToCSV = () => {
-    const toExport =
-      selected.size > 0
-        ? favorites.filter((f) => selected.has(f.sourceUrl))
-        : filtered;
+    const toExport = selected.size > 0
+      ? favorites.filter((f) => selected.has(f.sourceUrl))
+      : filtered;
 
     if (toExport.length === 0) {
       alert("没有可导出的数据");
       return;
     }
 
-    const headers = [
-      "公司",
-      "岗位",
-      "学历要求",
-      "地点",
-      "类型",
-      "来源",
-      "链接",
-      "收藏时间",
-    ];
-
+    const headers = ["公司", "岗位", "学历要求", "地点", "类型", "来源", "链接", "收藏时间"];
     const rows = toExport.map((f) => [
       f.company,
       f.title,
-      EDUCATION_LABELS[f.education as keyof typeof EDUCATION_LABELS] ||
-        f.education,
+      EDUCATION_LABELS[f.education as keyof typeof EDUCATION_LABELS] || f.education,
       f.location || "",
       f.jobType || "",
       f.sourceName || "",
@@ -119,31 +64,20 @@ export default function FavoritesPage() {
       new Date(f.createdAt).toLocaleString("zh-CN"),
     ]);
 
-    const csvContent =
-      "\uFEFF" +
-      [
-        headers.join(","),
-        ...rows.map((row) =>
-          row
-            .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
-            .join(",")
-        ),
-      ].join("\n");
+    const csvContent = "\uFEFF" + [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const link = document.createElement("a");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `fairjob收藏_${new Date().toLocaleDateString("zh-CN")}.csv`
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fairjob收藏_${new Date().toLocaleDateString("zh-CN")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -156,14 +90,11 @@ export default function FavoritesPage() {
             <div>
               <h1 className="text-2xl font-bold text-white">我的收藏</h1>
               <p className="text-sm text-white/60 mt-1">
-                共 {favorites.length} 条，可筛选后一键导出
+                共 {favorites.length} 条 · 仅保存在本设备，隐私仅你可见
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={exportToCSV}
-                className="btn-primary"
-              >
+              <button onClick={exportToCSV} className="btn-primary">
                 📊 导出 Excel
                 {selected.size > 0 && ` (${selected.size})`}
               </button>
@@ -191,8 +122,7 @@ export default function FavoritesPage() {
                   <option value="all" className="bg-slate-900">全部</option>
                   {eduOptions.map((edu) => (
                     <option key={edu} value={edu} className="bg-slate-900">
-                      {EDUCATION_LABELS[edu as keyof typeof EDUCATION_LABELS] ||
-                        edu}
+                      {EDUCATION_LABELS[edu as keyof typeof EDUCATION_LABELS] || edu}
                     </option>
                   ))}
                 </select>
@@ -221,19 +151,13 @@ export default function FavoritesPage() {
                   onChange={selectAll}
                   className="w-4 h-4 rounded border-white/20 bg-white/[0.05] text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"
                 />
-                <span className="text-sm text-white/60">
-                  全选 ({filtered.length})
-                </span>
+                <span className="text-sm text-white/60">全选 ({filtered.length})</span>
               </div>
             </div>
           </div>
 
           {/* 列表 */}
-          {loading ? (
-            <div className="py-16 text-center">
-              <p className="text-white/40">加载中...</p>
-            </div>
-          ) : filtered.length === 0 ? (
+          {filtered.length === 0 ? (
             <div className="glass-card p-16 text-center">
               <p className="text-white/60 mb-2">
                 {favorites.length === 0 ? "还没有收藏任何职位" : "没有符合条件的收藏"}
@@ -247,10 +171,7 @@ export default function FavoritesPage() {
           ) : (
             <div className="space-y-3">
               {filtered.map((fav) => (
-                <div
-                  key={fav.id}
-                  className="glass-card glass-card-hover p-4"
-                >
+                <div key={fav.sourceUrl} className="glass-card glass-card-hover p-4">
                   <div className="flex items-start gap-3">
                     <input
                       type="checkbox"
@@ -269,18 +190,16 @@ export default function FavoritesPage() {
                           >
                             {fav.title}
                           </a>
-                          <p className="text-sm text-white/60 mt-0.5">
-                            {fav.company}
-                          </p>
+                          <p className="text-sm text-white/60 mt-0.5">{fav.company}</p>
                         </div>
                         <button
-                          onClick={async () => {
-                            await fetch("/api/favorites/remove", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ sourceUrl: fav.sourceUrl }),
+                          onClick={() => {
+                            removeFavorites([fav.sourceUrl]);
+                            setSelected((prev) => {
+                              const next = new Set(prev);
+                              next.delete(fav.sourceUrl);
+                              return next;
                             });
-                            fetchFavorites();
                           }}
                           className="text-white/30 hover:text-red-400 text-sm shrink-0 transition-colors"
                         >
@@ -288,10 +207,7 @@ export default function FavoritesPage() {
                         </button>
                       </div>
                       <div className="flex items-center gap-2 mt-2 flex-wrap text-xs text-white/50">
-                        <EducationBadge
-                          education={fav.education as any}
-                          size="sm"
-                        />
+                        <EducationBadge education={fav.education} size="sm" />
                         {fav.location && (
                           <>
                             <span className="text-white/30">·</span>

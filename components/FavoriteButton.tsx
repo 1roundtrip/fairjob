@@ -3,6 +3,18 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
+interface FavoriteData {
+  sourceUrl: string;
+  title: string;
+  company: string;
+  location?: string | null;
+  education: string;
+  jobType?: string | null;
+  sourceName?: string | null;
+  jobId?: number;
+  createdAt: string;
+}
+
 interface FavoriteButtonProps {
   sourceUrl: string;
   title: string;
@@ -14,6 +26,59 @@ interface FavoriteButtonProps {
   jobId?: number;
   compact?: boolean;
   className?: string;
+}
+
+const STORAGE_KEY = "fairjob_favs_full";
+
+function getFavorites(): FavoriteData[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavorites(favs: FavoriteData[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(favs));
+    window.dispatchEvent(new Event("favorites-updated"));
+  } catch {}
+}
+
+export function useFavorites() {
+  const [favorites, setFavorites] = useState<FavoriteData[]>([]);
+
+  useEffect(() => {
+    setFavorites(getFavorites());
+    const handler = () => setFavorites(getFavorites());
+    window.addEventListener("favorites-updated", handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener("favorites-updated", handler);
+      window.removeEventListener("storage", handler);
+    };
+  }, []);
+
+  const isFavorited = (url: string) => favorites.some((f) => f.sourceUrl === url);
+
+  const toggleFavorite = (data: Omit<FavoriteData, "createdAt">) => {
+    const favs = getFavorites();
+    const idx = favs.findIndex((f) => f.sourceUrl === data.sourceUrl);
+    if (idx >= 0) {
+      favs.splice(idx, 1);
+    } else {
+      favs.unshift({ ...data, createdAt: new Date().toISOString() });
+    }
+    saveFavorites(favs);
+  };
+
+  const removeFavorites = (urls: string[]) => {
+    const favs = getFavorites().filter((f) => !urls.includes(f.sourceUrl));
+    saveFavorites(favs);
+  };
+
+  return { favorites, isFavorited, toggleFavorite, removeFavorites };
 }
 
 export default function FavoriteButton({
@@ -28,73 +93,58 @@ export default function FavoriteButton({
   compact = false,
   className,
 }: FavoriteButtonProps) {
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [favorited, setFavorited] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("fairjob_favs");
-      if (stored) {
-        const favs: string[] = JSON.parse(stored);
-        setIsFavorited(favs.includes(sourceUrl));
-      }
-    } catch {}
+    const update = () => setFavorited(getFavorites().some((f) => f.sourceUrl === sourceUrl));
+    update();
+    window.addEventListener("favorites-updated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("favorites-updated", update);
+      window.removeEventListener("storage", update);
+    };
   }, [sourceUrl]);
 
-  const updateLocalFavs = (add: boolean) => {
-    try {
-      const stored = localStorage.getItem("fairjob_favs");
-      let favs: string[] = stored ? JSON.parse(stored) : [];
-      if (add && !favs.includes(sourceUrl)) favs.push(sourceUrl);
-      if (!add) favs = favs.filter((u) => u !== sourceUrl);
-      localStorage.setItem("fairjob_favs", JSON.stringify(favs));
-    } catch {}
-  };
-
-  const toggleFavorite = async (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (loading) return;
-
-    setLoading(true);
-    try {
-      const endpoint = isFavorited ? "/api/favorites/remove" : "/api/favorites/add";
-      const body = isFavorited
-        ? { sourceUrl }
-        : { jobId, title, company, location, education, jobType, sourceUrl, sourceName };
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+    const favs = getFavorites();
+    const exists = favs.some((f) => f.sourceUrl === sourceUrl);
+    if (exists) {
+      saveFavorites(favs.filter((f) => f.sourceUrl !== sourceUrl));
+    } else {
+      favs.unshift({
+        sourceUrl,
+        title,
+        company,
+        location,
+        education,
+        jobType,
+        sourceName,
+        jobId,
+        createdAt: new Date().toISOString(),
       });
-
-      if (res.ok) {
-        setIsFavorited(!isFavorited);
-        updateLocalFavs(!isFavorited);
-      }
-    } finally {
-      setLoading(false);
+      saveFavorites(favs);
     }
   };
 
   if (compact) {
     return (
       <button
-        onClick={toggleFavorite}
-        disabled={loading}
+        onClick={handleClick}
         className={cn(
           "p-1.5 rounded-full transition-colors",
-          isFavorited
+          favorited
             ? "text-amber-400 hover:bg-amber-500/10"
             : "text-gray-500 hover:text-amber-400 hover:bg-amber-500/10",
           className
         )}
-        title={isFavorited ? "取消收藏" : "收藏"}
+        title={favorited ? "取消收藏" : "收藏"}
       >
         <svg
           className="w-5 h-5"
-          fill={isFavorited ? "currentColor" : "none"}
+          fill={favorited ? "currentColor" : "none"}
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
@@ -111,17 +161,16 @@ export default function FavoriteButton({
 
   return (
     <button
-      onClick={toggleFavorite}
-      disabled={loading}
+      onClick={handleClick}
       className={cn(
         "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-        isFavorited
+        favorited
           ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-400/20"
           : "bg-white/[0.06] text-gray-300 hover:bg-white/[0.1] border border-white/[0.08]",
         className
       )}
     >
-      {isFavorited ? "★ 已收藏" : "☆ 收藏"}
+      {favorited ? "★ 已收藏" : "☆ 收藏"}
     </button>
   );
 }
