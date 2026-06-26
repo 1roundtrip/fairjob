@@ -22,18 +22,6 @@ export const EDUCATION_LABELS: Record<string, string> = {
 };
 
 /**
- * 学历等级颜色映射
- */
-export const EDUCATION_COLORS: Record<string, string> = {
-  BACHELOR_AND_ABOVE: "bg-blue-100 text-blue-800",
-  BACHELOR_ONLY: "bg-indigo-100 text-indigo-800",
-  ASSOCIATE_AND_ABOVE: "bg-green-100 text-green-800",
-  ASSOCIATE_ONLY: "bg-emerald-100 text-emerald-800",
-  NO_REQUIREMENT: "bg-gray-100 text-gray-800",
-  UNKNOWN: "bg-yellow-100 text-yellow-800",
-};
-
-/**
  * 来源类型
  */
 export type SourceType =

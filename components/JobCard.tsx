@@ -1,16 +1,6 @@
 import { formatDate, cn } from "@/lib/utils";
-import type { EducationLevel } from "@/lib/constants";
 import EducationBadge from "./EducationBadge";
 import FavoriteButton from "./FavoriteButton";
-
-const DARK_EDUCATION_COLORS: Record<string, string> = {
-  BACHELOR_AND_ABOVE: "!bg-blue-500/15 !text-blue-300 !border !border-blue-400/20",
-  BACHELOR_ONLY: "!bg-indigo-500/15 !text-indigo-300 !border !border-indigo-400/20",
-  ASSOCIATE_AND_ABOVE: "!bg-green-500/15 !text-green-300 !border !border-green-400/20",
-  ASSOCIATE_ONLY: "!bg-emerald-500/15 !text-emerald-300 !border !border-emerald-400/20",
-  NO_REQUIREMENT: "!bg-gray-500/15 !text-gray-300 !border !border-gray-400/20",
-  UNKNOWN: "!bg-yellow-500/15 !text-yellow-300 !border !border-yellow-400/20",
-};
 
 interface JobCardProps {
   job: {
@@ -19,7 +9,7 @@ interface JobCardProps {
     company: string;
     location: string | null;
     salary: string | null;
-    education: any;
+    education: string;
     jobType: string | null;
     publishedAt: Date | string | null;
     sourceName: string | null;
@@ -47,8 +37,8 @@ export default function JobCard({ job, className }: JobCardProps) {
       <div className="flex justify-between items-start gap-4">
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-white group-hover:text-purple-300 transition-colors truncate">
-          {job.title}
-        </h3>
+            {job.title}
+          </h3>
           <p className="mt-1 text-sm text-gray-400 truncate">{job.company}</p>
         </div>
         {job.salary && (
@@ -90,10 +80,7 @@ export default function JobCard({ job, className }: JobCardProps) {
           </span>
         )}
 
-        <EducationBadge
-          education={job.education}
-          className={DARK_EDUCATION_COLORS[job.education as EducationLevel] || DARK_EDUCATION_COLORS.UNKNOWN}
-        />
+        <EducationBadge education={job.education} />
 
         {job.isMerged && job.mergeCount > 1 && (
           <span
@@ -106,9 +93,7 @@ export default function JobCard({ job, className }: JobCardProps) {
       </div>
 
       <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
-        <span>
-          来自 {job.sourceName || "未知来源"}
-        </span>
+        <span>来自 {job.sourceName || "未知来源"}</span>
         <span>{formatDate(displayDate)}</span>
       </div>
 
@@ -126,7 +111,6 @@ export default function JobCard({ job, className }: JobCardProps) {
           sourceUrl={job.sourceUrl}
           sourceName={job.sourceName}
           compact
-          variant="dark"
         />
       </div>
     </a>

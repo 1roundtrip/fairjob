@@ -13,7 +13,6 @@ interface FavoriteButtonProps {
   sourceName?: string | null;
   jobId?: number;
   compact?: boolean;
-  variant?: "light" | "dark";
   className?: string;
 }
 
@@ -27,21 +26,30 @@ export default function FavoriteButton({
   sourceName,
   jobId,
   compact = false,
-  variant = "light",
   className,
 }: FavoriteButtonProps) {
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("fairjob_favs");
-    if (stored) {
-      try {
+    try {
+      const stored = localStorage.getItem("fairjob_favs");
+      if (stored) {
         const favs: string[] = JSON.parse(stored);
         setIsFavorited(favs.includes(sourceUrl));
-      } catch {}
-    }
+      }
+    } catch {}
   }, [sourceUrl]);
+
+  const updateLocalFavs = (add: boolean) => {
+    try {
+      const stored = localStorage.getItem("fairjob_favs");
+      let favs: string[] = stored ? JSON.parse(stored) : [];
+      if (add && !favs.includes(sourceUrl)) favs.push(sourceUrl);
+      if (!add) favs = favs.filter((u) => u !== sourceUrl);
+      localStorage.setItem("fairjob_favs", JSON.stringify(favs));
+    } catch {}
+  };
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -50,52 +58,20 @@ export default function FavoriteButton({
 
     setLoading(true);
     try {
-      if (isFavorited) {
-        const res = await fetch("/api/favorites/remove", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sourceUrl }),
-        });
-        if (res.ok) {
-          setIsFavorited(false);
-          const stored = localStorage.getItem("fairjob_favs");
-          if (stored) {
-            const favs: string[] = JSON.parse(stored);
-            localStorage.setItem(
-              "fairjob_favs",
-              JSON.stringify(favs.filter((u) => u !== sourceUrl))
-            );
-          }
-        }
-      } else {
-        const res = await fetch("/api/favorites/add", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jobId,
-            title,
-            company,
-            location,
-            education,
-            jobType,
-            sourceUrl,
-            sourceName,
-          }),
-        });
-        if (res.ok) {
-          setIsFavorited(true);
-          const stored = localStorage.getItem("fairjob_favs");
-          let favs: string[] = [];
-          if (stored) {
-            try {
-              favs = JSON.parse(stored);
-            } catch {}
-          }
-          if (!favs.includes(sourceUrl)) {
-            favs.push(sourceUrl);
-            localStorage.setItem("fairjob_favs", JSON.stringify(favs));
-          }
-        }
+      const endpoint = isFavorited ? "/api/favorites/remove" : "/api/favorites/add";
+      const body = isFavorited
+        ? { sourceUrl }
+        : { jobId, title, company, location, education, jobType, sourceUrl, sourceName };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        setIsFavorited(!isFavorited);
+        updateLocalFavs(!isFavorited);
       }
     } finally {
       setLoading(false);
@@ -109,13 +85,9 @@ export default function FavoriteButton({
         disabled={loading}
         className={cn(
           "p-1.5 rounded-full transition-colors",
-          variant === "dark"
-            ? isFavorited
-              ? "text-amber-400 hover:bg-amber-500/10"
-              : "text-gray-500 hover:text-amber-400 hover:bg-amber-500/10"
-            : isFavorited
-              ? "text-amber-500 hover:bg-amber-50"
-              : "text-gray-300 hover:text-amber-500 hover:bg-amber-50",
+          isFavorited
+            ? "text-amber-400 hover:bg-amber-500/10"
+            : "text-gray-500 hover:text-amber-400 hover:bg-amber-500/10",
           className
         )}
         title={isFavorited ? "取消收藏" : "收藏"}
@@ -143,13 +115,9 @@ export default function FavoriteButton({
       disabled={loading}
       className={cn(
         "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-        variant === "dark"
-          ? isFavorited
-            ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-400/20"
-            : "bg-white/[0.06] text-gray-300 hover:bg-white/[0.1] border border-white/[0.08]"
-          : isFavorited
-            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-            : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+        isFavorited
+          ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-400/20"
+          : "bg-white/[0.06] text-gray-300 hover:bg-white/[0.1] border border-white/[0.08]",
         className
       )}
     >
