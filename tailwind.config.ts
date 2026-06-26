@@ -9,89 +9,95 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        night: {
-          50: "#f5f7ff",
-          100: "#e8ecff",
-          200: "#c9d2ff",
-          300: "#9aa8ff",
-          400: "#6b7cff",
-          500: "#4f46e5",
-          600: "#4338ca",
-          700: "#3730a3",
-          800: "#1e1b4b",
-          900: "#0f0d2b",
-          950: "#080716",
+        // 主色调 - 深色背景
+        base: {
+          950: "#0a0a0f",
+          900: "#111118",
+          800: "#1a1a24",
+          700: "#252532",
         },
-        aurora: {
-          green: "#10b981",
-          teal: "#06b6d4",
-          blue: "#3b82f6",
-          purple: "#8b5cf6",
-          pink: "#ec4899",
+        // 强调色 - 几何撞色
+        accent: {
+          coral: "#FF6B6B",      // 珊瑚红
+          amber: "#FBBF24",       // 琥珀黄
+          emerald: "#34D399",     // 翡翠绿
+          sky: "#38BDF8",         // 天蓝
+          violet: "#A78BFA",      // 紫罗兰
+          rose: "#FB7185",        // 玫瑰粉
         },
-        glass: {
-          DEFAULT: "rgba(255, 255, 255, 0.03)",
-          border: "rgba(255, 255, 255, 0.08)",
-          hover: "rgba(255, 255, 255, 0.06)",
+        // 文字色
+        text: {
+          primary: "#FAFAFA",
+          secondary: "#A1A1AA",
+          muted: "#52525B",
+        },
+        // 边框
+        border: {
+          subtle: "rgba(255, 255, 255, 0.06)",
+          DEFAULT: "rgba(255, 255, 255, 0.1)",
         },
       },
       fontFamily: {
         sans: [
+          "PingFang SC",
           "SF Pro Display",
           "-apple-system",
           "BlinkMacSystemFont",
           "Segoe UI",
-          "PingFang SC",
-          "Hiragino Sans GB",
-          "Microsoft YaHei",
           "sans-serif",
         ],
-        display: [
-          "SF Pro Display",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "PingFang SC",
-          "sans-serif",
+        mono: [
+          "JetBrains Mono",
+          "SF Mono",
+          "Monaco",
+          "Inconsolata",
+          "Fira Code",
+          "monospace",
         ],
       },
       animation: {
-        "aurora-shift": "aurora-shift 8s ease-in-out infinite",
-        "float": "float 6s ease-in-out infinite",
-        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
-        "fade-in-up": "fade-in-up 0.6s ease-out forwards",
-        "shimmer": "shimmer 2s linear infinite",
+        "fade-in": "fadeIn 0.5s ease-out forwards",
+        "slide-up": "slideUp 0.6s ease-out forwards",
+        "scale-in": "scaleIn 0.3s ease-out forwards",
+        "gradient-shift": "gradientShift 8s ease infinite",
       },
       keyframes: {
-        "aurora-shift": {
-          "0%, 100%": { backgroundPosition: "0% 50%" },
-          "50%": { backgroundPosition: "100% 50%" },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
-        "float": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" },
-        },
-        "pulse-glow": {
-          "0%, 100%": { opacity: "1", boxShadow: "0 0 20px rgba(79, 70, 229, 0.5)" },
-          "50%": { opacity: "0.8", boxShadow: "0 0 40px rgba(79, 70, 229, 0.8)" },
-        },
-        "fade-in-up": {
+        slideUp: {
           "0%": { opacity: "0", transform: "translateY(20px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        "shimmer": {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
+        scaleIn: {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        gradientShift: {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
         },
       },
       backgroundImage: {
-        "aurora-gradient":
-          "linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%)",
-        "glass-gradient":
-          "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+        // 几何渐变背景
+        "geo-gradient": "linear-gradient(135deg, #111118 0%, #1a1a24 50%, #111118 100%)",
+        // 撞色渐变
+        "coral-gradient": "linear-gradient(135deg, #FF6B6B 0%, #FB7185 100%)",
+        "amber-gradient": "linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)",
+        "emerald-gradient": "linear-gradient(135deg, #34D399 0%, #10B981 100%)",
+        "sky-gradient": "linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)",
+        "violet-gradient": "linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)",
       },
-      backdropBlur: {
-        xs: "2px",
+      boxShadow: {
+        "neo-sm": "0 2px 8px rgba(0, 0, 0, 0.3)",
+        "neo-md": "0 4px 16px rgba(0, 0, 0, 0.4)",
+        "neo-lg": "0 8px 32px rgba(0, 0, 0, 0.5)",
+        "glow-coral": "0 0 20px rgba(255, 107, 107, 0.3)",
+        "glow-amber": "0 0 20px rgba(251, 191, 36, 0.3)",
+        "glow-emerald": "0 0 20px rgba(52, 211, 153, 0.3)",
+        "glow-sky": "0 0 20px rgba(56, 189, 248, 0.3)",
+        "glow-violet": "0 0 20px rgba(167, 139, 250, 0.3)",
       },
     },
   },

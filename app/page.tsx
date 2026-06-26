@@ -252,7 +252,7 @@ export default async function Home({
             className="opacity-0 animate-fade-in-up"
             style={{ animationDelay: "300ms", animationFillMode: "forwards" }}
           >
-            <FilterBar className="mb-6" />
+            <FilterBar />
           </div>
 
           {/* 本周新开公司 */}

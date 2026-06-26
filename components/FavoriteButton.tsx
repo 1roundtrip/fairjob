@@ -134,10 +134,10 @@ export default function FavoriteButton({
       <button
         onClick={handleClick}
         className={cn(
-          "p-1.5 rounded-full transition-colors",
+          "p-1.5 rounded-full transition-all duration-300",
           favorited
-            ? "text-amber-400 hover:bg-amber-500/10"
-            : "text-gray-500 hover:text-amber-400 hover:bg-amber-500/10",
+            ? "text-[var(--amber)] hover:bg-[var(--amber)]/10"
+            : "text-[var(--text-muted)] hover:text-[var(--amber)] hover:bg-[var(--amber)]/10",
           className
         )}
         title={favorited ? "取消收藏" : "收藏"}
@@ -163,10 +163,10 @@ export default function FavoriteButton({
     <button
       onClick={handleClick}
       className={cn(
-        "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+        "px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-300",
         favorited
-          ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-400/20"
-          : "bg-white/[0.06] text-gray-300 hover:bg-white/[0.1] border border-white/[0.08]",
+          ? "bg-[var(--amber)]/20 text-[var(--amber)] hover:bg-[var(--amber)]/30 border border-[var(--amber)]/30"
+          : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)]",
         className
       )}
     >

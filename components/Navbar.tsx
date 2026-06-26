@@ -2,77 +2,79 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 
-const navLinks = [
-  { href: "/", label: "全部岗位" },
-  { href: "/calendar", label: "校招日历" },
-  { href: "/random", label: "随机探索" },
-  { href: "/favorites", label: "我的收藏" },
-  { href: "/admin", label: "管理后台" },
+const navItems = [
+  { href: "/", label: "首页", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
+  { href: "/favorites", label: "收藏", icon: "M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" },
+  { href: "/random", label: "发现", icon: "M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016zM12 9v2m0 4h.01" },
+  { href: "/calendar", label: "日历", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/[0.03] backdrop-blur-xl border-b border-white/[0.08]">
+    <header className="sticky top-0 z-40 backdrop-blur-xl border-b border-[var(--border-subtle)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center space-x-2 group">
-            <div className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 group-hover:scale-105">
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-lg opacity-80 blur-[6px] group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7V6m-3 4h18M9 10h.01M13 14h.01M9 14v-4h6v4M9 14v0m0 0l3-4m3 4l3-4m-3 4v0"
-                  />
-                </svg>
-              </div>
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--violet)] to-[var(--sky)] flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-[var(--violet)]/20 group-hover:scale-105 transition-transform">
+              F
             </div>
-            <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 drop-shadow-[0_0_20px_rgba(139,92,246,0.3)]">
-              FairJob
-            </span>
+            <div className="hidden sm:block">
+              <span className="text-lg font-bold text-white">FairJob</span>
+              <span className="block text-xs text-[var(--text-muted)]">公平求职</span>
+            </div>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "relative px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ease-out",
-                  pathname === link.href
-                    ? "text-white bg-white/[0.08] border border-white/[0.12] shadow-[0_0_20px_rgba(139,92,246,0.15)]"
-                    : "text-white/60 hover:text-white hover:bg-white/[0.05] hover:border-white/[0.08] border border-transparent"
-                )}
-              >
-                {pathname === link.href && (
-                  <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 -z-10"></span>
-                )}
-                {link.label}
-              </Link>
-            ))}
-          </div>
+          {/* 导航 */}
+          <nav className="flex items-center gap-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    relative flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300
+                    ${isActive 
+                      ? "text-white bg-gradient-to-r from-[var(--violet)]/20 to-[var(--sky)]/20 border border-[var(--violet)]/30" 
+                      : "text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-tertiary)]"
+                    }
+                  `}
+                >
+                  {isActive && (
+                    <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-[var(--violet)]/10 to-[var(--sky)]/10 animate-pulse" />
+                  )}
+                  <svg
+                    className={`w-4 h-4 relative ${isActive ? "text-[var(--violet)]" : ""}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                  </svg>
+                  <span className="relative">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
-          <div className="flex items-center space-x-3">
-            <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-              <span className="relative w-2 h-2 bg-emerald-400 rounded-full mr-2">
-                <span className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-60"></span>
-              </span>
-              反算法
-            </span>
+          {/* 右侧操作 */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/login"
+              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-white hover:bg-[var(--bg-tertiary)] transition-all duration-300"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              管理
+            </Link>
           </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 }

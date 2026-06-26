@@ -1,97 +1,87 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { EDUCATION_LABELS, ALL_EDUCATION_OPTIONS, type EducationLevel } from "@/lib/constants";
-import { CHINA_CITIES, POPULAR_CITIES } from "@/lib/cities";
-import { cn } from "@/lib/utils";
+import { CHINA_CITIES } from "@/lib/cities";
+import {
+  BACHELOR_FILTER,
+  ASSOCIATE_FILTER,
+  EDUCATION_LABELS,
+  DATE_RANGE_OPTIONS,
+  RECENT_DAYS,
+} from "@/lib/constants";
 
-export default function FilterBar({ className }: { className?: string }) {
+interface FilterBarProps {
+  initialKeyword?: string;
+  initialLocation?: string;
+  initialEducation?: string;
+  initialDays?: number;
+}
+
+export default function FilterBar({
+  initialKeyword = "",
+  initialLocation = "",
+  initialEducation = "",
+  initialDays = RECENT_DAYS,
+}: FilterBarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [keyword, setKeyword] = useState(initialKeyword);
+  const [location, setLocation] = useState(initialLocation);
+  const [education, setEducation] = useState(initialEducation);
+  const [days, setDays] = useState(initialDays);
+  const [showCityPicker, setShowCityPicker] = useState(false);
 
-  const [keyword, setKeyword] = useState(searchParams.get("q") || "");
-  const [location, setLocation] = useState(searchParams.get("loc") || "");
-  const [showEduDropdown, setShowEduDropdown] = useState(false);
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
-  const [selectedProvince, setSelectedProvince] = useState<string>("");
-  const cityDropdownRef = useRef<HTMLDivElement>(null);
-
-  // 从 URL 解析初始学历筛选
-  const getInitialEducation = (): EducationLevel[] => {
-    const mode = searchParams.get("mode");
-    const eduParam = searchParams.get("edu");
-
-    if (mode === "bachelor") {
-      return ["BACHELOR_AND_ABOVE", "BACHELOR_ONLY"] as EducationLevel[];
-    }
-    if (mode === "associate") {
-      return ["ASSOCIATE_AND_ABOVE", "ASSOCIATE_ONLY"] as EducationLevel[];
-    }
-    if (eduParam) {
-      return eduParam
-        .split(",")
-        .filter((e) => ALL_EDUCATION_OPTIONS.includes(e as any)) as EducationLevel[];
-    }
-    return [...ALL_EDUCATION_OPTIONS];
-  };
-
-  const [selectedEdu, setSelectedEdu] = useState<EducationLevel[]>(getInitialEducation);
-
-  // 同步 URL 变化
   useEffect(() => {
-    setKeyword(searchParams.get("q") || "");
-    setLocation(searchParams.get("loc") || "");
-    setSelectedEdu(getInitialEducation());
+    setKeyword(searchParams.get("keyword") || "");
+    setLocation(searchParams.get("location") || "");
+    setEducation(searchParams.get("education") || "");
+    setDays(parseInt(searchParams.get("days") || RECENT_DAYS.toString(), 10));
   }, [searchParams]);
-
-  const toggleEdu = (edu: EducationLevel) => {
-    setSelectedEdu((prev) =>
-      prev.includes(edu) ? prev.filter((e) => e !== edu) : [...prev, edu]
-    );
-  };
-
-  const selectCity = (city: string) => {
-    setLocation(city);
-    setShowCityDropdown(false);
-    const params = new URLSearchParams(searchParams.toString());
-    if (city) {
-      params.set("loc", city);
-    } else {
-      params.delete("loc");
-    }
-    params.set("page", "1");
-    router.push(`/?${params.toString()}`);
-  };
-
-  const selectProvince = (province: string) => {
-    setSelectedProvince(province);
-  };
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (keyword) params.set("q", keyword);
-    if (location) params.set("loc", location);
-    if (
-      selectedEdu.length > 0 &&
-      selectedEdu.length < ALL_EDUCATION_OPTIONS.length
-    ) {
-      params.set("edu", selectedEdu.join(","));
-    }
-    params.set("page", "1");
+    if (keyword) params.set("keyword", keyword);
+    if (location) params.set("location", location);
+    if (education) params.set("education", education);
+    if (days !== RECENT_DAYS) params.set("days", days.toString());
     router.push(`/?${params.toString()}`);
-    setShowEduDropdown(false);
   };
 
-  const selectedCount = selectedEdu.length;
-  const allSelected = selectedCount === ALL_EDUCATION_OPTIONS.length;
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+  const toggleEducation = (edu: string) => {
+    if (education === edu) {
+      setEducation("");
+    } else {
+      setEducation(edu);
+    }
+  };
+
+  const getCurrentProvince = () => {
+    if (!location) return null;
+    return CHINA_CITIES.find((p) =>
+      p.cities.some((c) => c === location)
+    );
+  };
+
+  const selectCity = (cityName: string) => {
+    setLocation(cityName);
+    setShowCityPicker(false);
+    const params = new URLSearchParams(searchParams);
+    params.set("location", cityName);
+    router.push(`/?${params.toString()}`);
+  };
 
   return (
-    <div className={cn("glass-card p-4", className)}>
-      <div className="flex flex-col sm:flex-row gap-3">
+    <div className="card p-4 space-y-4">
+      {/* 搜索框 */}
+      <div className="flex gap-3">
         <div className="flex-1 relative">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -105,222 +95,157 @@ export default function FilterBar({ className }: { className?: string }) {
           </svg>
           <input
             type="text"
-            placeholder="搜索职位或公司..."
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="w-full pl-10 pr-4 py-2.5 bg-white/[0.05] border border-white/[0.1] rounded-xl text-sm text-white placeholder-white/40 focus:outline-none focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            onKeyDown={handleKeyDown}
+            placeholder="搜索职位、公司..."
+            className="input pl-12"
           />
         </div>
-
-        <div className="relative w-full sm:w-44">
-          <div className="flex">
-            <input
-              type="text"
-              placeholder="城市"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="w-full px-4 py-2.5 bg-white/[0.05] border border-white/[0.1] rounded-xl text-sm text-white placeholder-white/40 focus:outline-none focus:border-indigo-400/50 focus:ring-2 focus:ring-indigo-500/20 transition-all pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowCityDropdown(!showCityDropdown)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-white/40 hover:text-white/70 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-
-          {showCityDropdown && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-start sm:justify-start sm:relative">
-              <div
-                className="fixed inset-0 bg-black/40 sm:hidden"
-                onClick={() => setShowCityDropdown(false)}
-              />
-              <div className="relative w-full sm:w-80 glass-card backdrop-blur-xl rounded-t-2xl sm:rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden mb-safe sm:mt-2" ref={cityDropdownRef}>
-                <div className="p-3 border-b border-white/[0.08] flex justify-between items-center">
-                  <span className="text-sm font-medium text-white">选择城市</span>
-                  <button
-                    onClick={() => setShowCityDropdown(false)}
-                    className="p-1 text-white/40 hover:text-white/70 sm:hidden transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="p-3 border-b border-white/[0.08]">
-                  <p className="text-xs text-white/50 mb-2">热门城市</p>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => selectCity("")}
-                      className={cn(
-                        "px-3 py-1 rounded-full text-xs border transition-all",
-                        !location
-                          ? "bg-indigo-500/30 text-indigo-200 border-indigo-400/40"
-                          : "bg-white/[0.03] text-white/70 border-white/[0.1] hover:border-indigo-400/40 hover:text-white"
-                      )}
-                    >
-                      全部
-                    </button>
-                    {POPULAR_CITIES.map((city) => (
-                      <button
-                        key={city}
-                        onClick={() => selectCity(city)}
-                        className={cn(
-                          "px-3 py-1 rounded-full text-xs border transition-all",
-                          location === city
-                            ? "bg-indigo-500/30 text-indigo-200 border-indigo-400/40"
-                            : "bg-white/[0.03] text-white/70 border-white/[0.1] hover:border-indigo-400/40 hover:text-white"
-                        )}
-                      >
-                        {city}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex">
-                  <div className="w-24 border-r border-white/[0.08] max-h-64 overflow-y-auto bg-white/[0.02]">
-                    {CHINA_CITIES.map((item) => (
-                      <button
-                        key={item.province}
-                        onClick={() => selectProvince(item.province)}
-                        className={cn(
-                          "w-full px-3 py-2 text-left text-xs transition-colors",
-                          selectedProvince === item.province
-                            ? "bg-white/[0.08] text-indigo-300 font-medium"
-                            : "text-white/60 hover:bg-white/[0.05] hover:text-white"
-                        )}
-                      >
-                        {item.province}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex-1 max-h-64 overflow-y-auto p-2">
-                    {selectedProvince ? (
-                      <div className="space-y-1">
-                        <p className="text-xs text-white/40 px-2 py-1">
-                          {selectedProvince} · 按省份筛选
-                        </p>
-                        <button
-                          onClick={() => selectCity(selectedProvince)}
-                          className={cn(
-                            "w-full px-3 py-2 text-left text-sm rounded-md transition-colors",
-                            location === selectedProvince
-                              ? "bg-indigo-500/20 text-indigo-200"
-                              : "text-white/70 hover:bg-white/[0.05] hover:text-white"
-                          )}
-                        >
-                          <span className="text-indigo-400 mr-1">●</span>
-                          全省 ({selectedProvince})
-                        </button>
-                        {CHINA_CITIES.find((p) => p.province === selectedProvince)?.cities.map(
-                          (city) => (
-                            <button
-                              key={city}
-                              onClick={() => selectCity(city)}
-                              className={cn(
-                                "w-full px-3 py-2 text-left text-sm rounded-md transition-colors",
-                                location === city
-                                  ? "bg-indigo-500/20 text-indigo-200"
-                                  : "text-white/70 hover:bg-white/[0.05] hover:text-white"
-                              )}
-                            >
-                              {city}
-                            </button>
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-white/40 text-center py-8">
-                        请选择省份
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="relative">
-          <button
-            onClick={() => setShowEduDropdown(!showEduDropdown)}
-            className="w-full sm:w-auto px-4 py-2.5 bg-white/[0.05] border border-white/[0.1] rounded-xl text-sm font-medium text-white/80 hover:bg-white/[0.08] hover:border-white/[0.15] flex items-center justify-between gap-2 transition-all"
-          >
-            <span>学历要求</span>
-            <span
-              className={cn(
-                "px-1.5 py-0.5 rounded text-xs",
-                allSelected
-                  ? "bg-white/[0.1] text-white/60"
-                  : "bg-indigo-500/30 text-indigo-200"
-              )}
-            >
-              {allSelected ? "全部" : `${selectedCount}项`}
-            </span>
-          </button>
-
-          {showEduDropdown && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:justify-start sm:relative">
-              <div
-                className="fixed inset-0 bg-black/40 sm:hidden"
-                onClick={() => setShowEduDropdown(false)}
-              />
-              <div className="relative w-full sm:w-56 glass-card backdrop-blur-xl rounded-t-2xl sm:rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden mb-safe">
-                <div className="p-3 border-b border-white/[0.08] flex justify-between items-center">
-                  <span className="text-sm font-medium text-white">选择学历要求</span>
-                  <button
-                    onClick={() => setShowEduDropdown(false)}
-                    className="p-1 text-white/40 hover:text-white/70 sm:hidden transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <div className="p-2 max-h-64 overflow-y-auto">
-                  {ALL_EDUCATION_OPTIONS.map((edu) => (
-                    <label
-                      key={edu}
-                      className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white/[0.05] cursor-pointer text-sm text-white/80 transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedEdu.includes(edu)}
-                        onChange={() => toggleEdu(edu)}
-                        className="rounded border-white/20 bg-white/[0.05] text-indigo-500 focus:ring-indigo-500/30 focus:ring-offset-0"
-                      />
-                      <span>{EDUCATION_LABELS[edu]}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="p-3 border-t border-white/[0.08] flex justify-end gap-2">
-                  <button
-                    onClick={() => setShowEduDropdown(false)}
-                    className="px-4 py-2 text-sm text-white/60 hover:bg-white/[0.08] hover:text-white/80 rounded-xl transition-all"
-                  >
-                    取消
-                  </button>
-                  <button
-                    onClick={handleSearch}
-                    className="btn-primary"
-                  >
-                    确定
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <button
-          onClick={handleSearch}
-          className="btn-primary"
-        >
+        <button onClick={handleSearch} className="btn-primary px-6">
           搜索
         </button>
+      </div>
+
+      {/* 时间筛选 */}
+      <div className="flex flex-wrap gap-2">
+        <span className="text-xs text-[var(--text-muted)] self-center w-16">发布时间</span>
+        <div className="flex flex-wrap gap-2">
+          {DATE_RANGE_OPTIONS.map((option) => (
+            <button
+              key={option.days}
+              onClick={() => {
+                setDays(option.days);
+                const params = new URLSearchParams(searchParams);
+                if (option.days === 0) {
+                  params.delete("days");
+                } else {
+                  params.set("days", option.days.toString());
+                }
+                router.push(`/?${params.toString()}`);
+              }}
+              className={`
+                px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300
+                ${days === option.days
+                  ? "bg-gradient-to-r from-[var(--violet)] to-[var(--sky)] text-white shadow-lg"
+                  : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:text-white border border-[var(--border-subtle)]"
+                }
+              `}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 城市选择 */}
+      <div className="flex flex-wrap gap-2">
+        <span className="text-xs text-[var(--text-muted)] self-center w-16">城市</span>
+        <div className="relative">
+          <button
+            onClick={() => setShowCityPicker(!showCityPicker)}
+            className={`
+              px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300 flex items-center gap-1
+              ${location
+                ? "bg-[var(--emerald)]/20 text-[var(--emerald)] border border-[var(--emerald)]/30"
+                : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-[var(--emerald)]/30"
+              }
+            `}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            </svg>
+            {location || "选择城市"}
+            {location && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLocation("");
+                  const params = new URLSearchParams(searchParams);
+                  params.delete("location");
+                  router.push(`/?${params.toString()}`);
+                }}
+                className="ml-1 hover:text-white"
+              >
+                ×
+              </button>
+            )}
+          </button>
+
+          {showCityPicker && (
+            <div className="absolute top-full left-0 mt-2 card p-4 w-80 max-h-80 overflow-y-auto z-50">
+              <div className="grid grid-cols-2 gap-2">
+                {CHINA_CITIES.map((province) => (
+                  <div key={province.province}>
+                    <p className="text-xs font-semibold text-[var(--text-muted)] mb-1">
+                      {province.province}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {province.cities.slice(0, 6).map((city) => (
+                        <button
+                          key={city}
+                          onClick={() => selectCity(city)}
+                          className={`
+                            px-2 py-0.5 text-xs rounded transition-all
+                            ${location === city
+                              ? "bg-[var(--emerald)] text-white"
+                              : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] hover:bg-[var(--emerald)]/20 hover:text-[var(--emerald)]"
+                            }
+                          `}
+                        >
+                          {city}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 学历筛选 */}
+      <div className="flex flex-wrap gap-2">
+        <span className="text-xs text-[var(--text-muted)] self-center w-16">学历</span>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => toggleEducation("bachelor")}
+            className={`
+              px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300
+              ${education === "bachelor"
+                ? "bg-gradient-to-r from-[var(--violet)] to-[var(--rose)] text-white shadow-lg"
+                : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-[var(--violet)]/30"
+              }
+            `}
+          >
+            本科及以上
+          </button>
+          <button
+            onClick={() => toggleEducation("associate")}
+            className={`
+              px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300
+              ${education === "associate"
+                ? "bg-gradient-to-r from-[var(--emerald)] to-[var(--sky)] text-white shadow-lg"
+                : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-[var(--emerald)]/30"
+              }
+            `}
+          >
+            专科及以上
+          </button>
+          <button
+            onClick={() => toggleEducation("all")}
+            className={`
+              px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-300
+              ${education === "all"
+                ? "bg-gradient-to-r from-[var(--amber)] to-[var(--coral)] text-white shadow-lg"
+                : "bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-[var(--amber)]/30"
+              }
+            `}
+          >
+            不限学历
+          </button>
+        </div>
       </div>
     </div>
   );
