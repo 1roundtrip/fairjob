@@ -147,180 +147,182 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
+    <div className="min-h-screen relative">
+      <div className="relative z-10">
+        <Navbar />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">我的收藏</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              共 {favorites.length} 条，可筛选后一键导出
-            </p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={exportToCSV}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-            >
-              📊 导出 Excel
-              {selected.size > 0 && ` (${selected.size})`}
-            </button>
-            {selected.size > 0 && (
-              <button
-                onClick={removeSelected}
-                className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
-              >
-                删除选中
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 筛选栏 */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">学历：</label>
-              <select
-                value={filterEdu}
-                onChange={(e) => setFilterEdu(e.target.value)}
-                className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm"
-              >
-                <option value="all">全部</option>
-                {eduOptions.map((edu) => (
-                  <option key={edu} value={edu}>
-                    {EDUCATION_LABELS[edu as keyof typeof EDUCATION_LABELS] ||
-                      edu}
-                  </option>
-                ))}
-              </select>
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-white">我的收藏</h1>
+              <p className="text-sm text-white/60 mt-1">
+                共 {favorites.length} 条，可筛选后一键导出
+              </p>
             </div>
-            {typeOptions.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">类型：</label>
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm"
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={exportToCSV}
+                className="btn-primary"
+              >
+                📊 导出 Excel
+                {selected.size > 0 && ` (${selected.size})`}
+              </button>
+              {selected.size > 0 && (
+                <button
+                  onClick={removeSelected}
+                  className="px-5 py-2.5 bg-red-500/15 text-red-300 border border-red-400/30 rounded-xl text-sm font-medium hover:bg-red-500/25 transition-all duration-300"
                 >
-                  <option value="all">全部</option>
-                  {typeOptions.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
+                  删除选中
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 筛选栏 */}
+          <div className="glass-card p-4 mb-6">
+            <div className="flex flex-wrap gap-4 items-center">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-white/60">学历：</label>
+                <select
+                  value={filterEdu}
+                  onChange={(e) => setFilterEdu(e.target.value)}
+                  className="px-3 py-1.5 bg-white/[0.05] border border-white/[0.1] rounded-lg text-sm text-white focus:outline-none focus:border-white/20 transition-colors"
+                >
+                  <option value="all" className="bg-slate-900">全部</option>
+                  {eduOptions.map((edu) => (
+                    <option key={edu} value={edu} className="bg-slate-900">
+                      {EDUCATION_LABELS[edu as keyof typeof EDUCATION_LABELS] ||
+                        edu}
                     </option>
                   ))}
                 </select>
               </div>
-            )}
-            <div className="flex items-center gap-2 ml-auto">
-              <input
-                type="checkbox"
-                checked={selected.size === filtered.length && filtered.length > 0}
-                onChange={selectAll}
-                className="rounded"
-              />
-              <span className="text-sm text-gray-600">
-                全选 ({filtered.length})
-              </span>
+              {typeOptions.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-white/60">类型：</label>
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                    className="px-3 py-1.5 bg-white/[0.05] border border-white/[0.1] rounded-lg text-sm text-white focus:outline-none focus:border-white/20 transition-colors"
+                  >
+                    <option value="all" className="bg-slate-900">全部</option>
+                    {typeOptions.map((t) => (
+                      <option key={t} value={t} className="bg-slate-900">
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div className="flex items-center gap-2 ml-auto">
+                <input
+                  type="checkbox"
+                  checked={selected.size === filtered.length && filtered.length > 0}
+                  onChange={selectAll}
+                  className="w-4 h-4 rounded border-white/20 bg-white/[0.05] text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-sm text-white/60">
+                  全选 ({filtered.length})
+                </span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 列表 */}
-        {loading ? (
-          <div className="py-16 text-center">
-            <p className="text-gray-400">加载中...</p>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-16 text-center">
-            <p className="text-gray-400 mb-2">
-              {favorites.length === 0 ? "还没有收藏任何职位" : "没有符合条件的收藏"}
-            </p>
-            {favorites.length === 0 && (
-              <p className="text-sm text-gray-300">
-                去首页逛逛，看到喜欢的职位点 ☆ 收藏吧
+          {/* 列表 */}
+          {loading ? (
+            <div className="py-16 text-center">
+              <p className="text-white/40">加载中...</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="glass-card p-16 text-center">
+              <p className="text-white/60 mb-2">
+                {favorites.length === 0 ? "还没有收藏任何职位" : "没有符合条件的收藏"}
               </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((fav) => (
-              <div
-                key={fav.id}
-                className="bg-white rounded-xl border border-gray-200 p-4 hover:border-gray-300 transition-colors"
-              >
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(fav.sourceUrl)}
-                    onChange={() => toggleSelect(fav.sourceUrl)}
-                    className="mt-1.5 rounded"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <a
-                          href={fav.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-base font-medium text-gray-900 hover:text-blue-600"
+              {favorites.length === 0 && (
+                <p className="text-sm text-white/40">
+                  去首页逛逛，看到喜欢的职位点 ☆ 收藏吧
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((fav) => (
+                <div
+                  key={fav.id}
+                  className="glass-card glass-card-hover p-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(fav.sourceUrl)}
+                      onChange={() => toggleSelect(fav.sourceUrl)}
+                      className="mt-1.5 w-4 h-4 rounded border-white/20 bg-white/[0.05] text-indigo-500 focus:ring-indigo-500/50 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <a
+                            href={fav.sourceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-base font-medium text-white hover:text-indigo-300 transition-colors"
+                          >
+                            {fav.title}
+                          </a>
+                          <p className="text-sm text-white/60 mt-0.5">
+                            {fav.company}
+                          </p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            await fetch("/api/favorites/remove", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ sourceUrl: fav.sourceUrl }),
+                            });
+                            fetchFavorites();
+                          }}
+                          className="text-white/30 hover:text-red-400 text-sm shrink-0 transition-colors"
                         >
-                          {fav.title}
-                        </a>
-                        <p className="text-sm text-gray-600 mt-0.5">
-                          {fav.company}
-                        </p>
+                          ✕
+                        </button>
                       </div>
-                      <button
-                        onClick={async () => {
-                          await fetch("/api/favorites/remove", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ sourceUrl: fav.sourceUrl }),
-                          });
-                          fetchFavorites();
-                        }}
-                        className="text-gray-300 hover:text-red-500 text-sm shrink-0"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap text-xs text-gray-500">
-                      <EducationBadge
-                        education={fav.education as any}
-                        size="sm"
-                      />
-                      {fav.location && (
-                        <>
-                          <span>·</span>
-                          <span>{fav.location}</span>
-                        </>
-                      )}
-                      {fav.jobType && (
-                        <>
-                          <span>·</span>
-                          <span>{fav.jobType}</span>
-                        </>
-                      )}
-                      {fav.sourceName && (
-                        <>
-                          <span>·</span>
-                          <span>来自 {fav.sourceName}</span>
-                        </>
-                      )}
-                      <span>·</span>
-                      <span>
-                        {new Date(fav.createdAt).toLocaleDateString("zh-CN")} 收藏
-                      </span>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap text-xs text-white/50">
+                        <EducationBadge
+                          education={fav.education as any}
+                          size="sm"
+                        />
+                        {fav.location && (
+                          <>
+                            <span className="text-white/30">·</span>
+                            <span>{fav.location}</span>
+                          </>
+                        )}
+                        {fav.jobType && (
+                          <>
+                            <span className="text-white/30">·</span>
+                            <span>{fav.jobType}</span>
+                          </>
+                        )}
+                        {fav.sourceName && (
+                          <>
+                            <span className="text-white/30">·</span>
+                            <span>来自 {fav.sourceName}</span>
+                          </>
+                        )}
+                        <span className="text-white/30">·</span>
+                        <span>
+                          {new Date(fav.createdAt).toLocaleDateString("zh-CN")} 收藏
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

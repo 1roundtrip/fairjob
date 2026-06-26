@@ -1,6 +1,16 @@
 import { formatDate, cn } from "@/lib/utils";
+import type { EducationLevel } from "@/lib/constants";
 import EducationBadge from "./EducationBadge";
 import FavoriteButton from "./FavoriteButton";
+
+const DARK_EDUCATION_COLORS: Record<string, string> = {
+  BACHELOR_AND_ABOVE: "!bg-blue-500/15 !text-blue-300 !border !border-blue-400/20",
+  BACHELOR_ONLY: "!bg-indigo-500/15 !text-indigo-300 !border !border-indigo-400/20",
+  ASSOCIATE_AND_ABOVE: "!bg-green-500/15 !text-green-300 !border !border-green-400/20",
+  ASSOCIATE_ONLY: "!bg-emerald-500/15 !text-emerald-300 !border !border-emerald-400/20",
+  NO_REQUIREMENT: "!bg-gray-500/15 !text-gray-300 !border !border-gray-400/20",
+  UNKNOWN: "!bg-yellow-500/15 !text-yellow-300 !border !border-yellow-400/20",
+};
 
 interface JobCardProps {
   job: {
@@ -30,25 +40,25 @@ export default function JobCard({ job, className }: JobCardProps) {
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "block p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-200 group",
+        "block p-5 bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-2xl hover:border-white/[0.2] hover:shadow-[0_0_30px_rgba(139,92,246,0.15)] hover:-translate-y-0.5 transition-all duration-300 group",
         className
       )}
     >
       <div className="flex justify-between items-start gap-4">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+          <h3 className="text-base font-semibold text-white group-hover:text-purple-300 transition-colors truncate">
           {job.title}
         </h3>
-          <p className="mt-1 text-sm text-gray-600 truncate">{job.company}</p>
+          <p className="mt-1 text-sm text-gray-400 truncate">{job.company}</p>
         </div>
         {job.salary && (
-          <span className="shrink-0 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg font-medium text-sm whitespace-nowrap">
+          <span className="shrink-0 px-2.5 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-200 rounded-lg font-medium text-sm whitespace-nowrap">
             {job.salary}
           </span>
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-400">
         {job.location && (
           <span className="flex items-center space-x-1">
             <svg
@@ -75,16 +85,19 @@ export default function JobCard({ job, className }: JobCardProps) {
         )}
 
         {job.jobType && (
-          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+          <span className="px-2 py-0.5 bg-white/[0.06] text-gray-300 border border-white/[0.08] rounded text-xs">
             {job.jobType}
           </span>
         )}
 
-        <EducationBadge education={job.education} />
+        <EducationBadge
+          education={job.education}
+          className={DARK_EDUCATION_COLORS[job.education as EducationLevel] || DARK_EDUCATION_COLORS.UNKNOWN}
+        />
 
         {job.isMerged && job.mergeCount > 1 && (
           <span
-            className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs"
+            className="px-2 py-0.5 bg-purple-500/15 text-purple-300 border border-purple-400/20 rounded text-xs"
             title={`信息来自 ${job.mergeCount} 个来源`}
           >
             多来源
@@ -92,15 +105,15 @@ export default function JobCard({ job, className }: JobCardProps) {
         )}
       </div>
 
-      <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+      <div className="mt-3 flex items-center justify-between text-xs text-gray-500">
         <span>
           来自 {job.sourceName || "未知来源"}
         </span>
         <span>{formatDate(displayDate)}</span>
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
-        <span className="text-xs text-gray-400">
+      <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-3">
+        <span className="text-xs text-gray-500 group-hover:text-gray-400 transition-colors">
           点击跳转至原始页面 →
         </span>
         <FavoriteButton
@@ -113,6 +126,7 @@ export default function JobCard({ job, className }: JobCardProps) {
           sourceUrl={job.sourceUrl}
           sourceName={job.sourceName}
           compact
+          variant="dark"
         />
       </div>
     </a>

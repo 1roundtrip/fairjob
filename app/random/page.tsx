@@ -7,21 +7,21 @@ export default async function RandomPage() {
   const jobs = await getRandomJobs(20);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen relative z-10">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
             🎲 随机探索
           </h1>
-          <p className="mt-3 text-gray-600 max-w-xl mx-auto">
+          <p className="mt-3 text-white/60 max-w-xl mx-auto">
             打破算法茧房，随机发现好工作。每次刷新都会展示 20 个不同公司的随机职位。
           </p>
           <div className="mt-4">
             <a
               href="/random"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-xl shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 transform hover:-translate-y-0.5 transition-all"
+              className="btn-primary inline-flex items-center gap-2 px-6 py-3"
             >
               <svg
                 className="w-5 h-5"
@@ -48,9 +48,9 @@ export default async function RandomPage() {
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <p className="text-gray-500">暂无数据，先去添加一些职位吧</p>
-            <Link href="/admin" className="text-blue-600 text-sm mt-2 inline-block">
+          <div className="glass-card p-12 text-center">
+            <p className="text-white/50">暂无数据，先去添加一些职位吧</p>
+            <Link href="/admin" className="text-purple-400 text-sm mt-2 inline-block hover:text-purple-300 transition-colors">
               去管理后台 →
             </Link>
           </div>

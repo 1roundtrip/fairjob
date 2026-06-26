@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface FavoriteButtonProps {
   sourceUrl: string;
@@ -12,6 +13,8 @@ interface FavoriteButtonProps {
   sourceName?: string | null;
   jobId?: number;
   compact?: boolean;
+  variant?: "light" | "dark";
+  className?: string;
 }
 
 export default function FavoriteButton({
@@ -24,6 +27,8 @@ export default function FavoriteButton({
   sourceName,
   jobId,
   compact = false,
+  variant = "light",
+  className,
 }: FavoriteButtonProps) {
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -102,11 +107,17 @@ export default function FavoriteButton({
       <button
         onClick={toggleFavorite}
         disabled={loading}
-        className={`p-1.5 rounded-full transition-colors ${
-          isFavorited
-            ? "text-amber-500 hover:bg-amber-50"
-            : "text-gray-300 hover:text-amber-500 hover:bg-amber-50"
-        }`}
+        className={cn(
+          "p-1.5 rounded-full transition-colors",
+          variant === "dark"
+            ? isFavorited
+              ? "text-amber-400 hover:bg-amber-500/10"
+              : "text-gray-500 hover:text-amber-400 hover:bg-amber-500/10"
+            : isFavorited
+              ? "text-amber-500 hover:bg-amber-50"
+              : "text-gray-300 hover:text-amber-500 hover:bg-amber-50",
+          className
+        )}
         title={isFavorited ? "取消收藏" : "收藏"}
       >
         <svg
@@ -130,11 +141,17 @@ export default function FavoriteButton({
     <button
       onClick={toggleFavorite}
       disabled={loading}
-      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-        isFavorited
-          ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-      }`}
+      className={cn(
+        "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+        variant === "dark"
+          ? isFavorited
+            ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-400/20"
+            : "bg-white/[0.06] text-gray-300 hover:bg-white/[0.1] border border-white/[0.08]"
+          : isFavorited
+            ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+            : "bg-gray-100 text-gray-600 hover:bg-gray-200",
+        className
+      )}
     >
       {isFavorited ? "★ 已收藏" : "☆ 收藏"}
     </button>
