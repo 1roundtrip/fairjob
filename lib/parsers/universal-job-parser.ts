@@ -291,7 +291,9 @@ export class UniversalJobParser {
     const location = extractPrimaryLocation(fullText);
 
     // 提取日期
-    const publishedAt = this.extractDateFromContext(fullText);
+    const publishedDateResult = this.extractDateFromContext(fullText);
+    const publishedAt = publishedDateResult.date;
+    const isDateEstimate = publishedDateResult.isEstimate;
 
     // 提取薪资
     const salary = this.extractSalary(fullText);
@@ -309,7 +311,8 @@ export class UniversalJobParser {
     // 保存原始 HTML 片段（供审核）
     const rawHtml = $context.clone().wrap("<div></div>").parent().html() || undefined;
 
-    return {
+    // 构建临时 job 对象用于计算置信度
+    const tempJob: ParsedJob = {
       title: title.trim(),
       company: company || "未知公司",
       location,
@@ -322,6 +325,28 @@ export class UniversalJobParser {
       publishedAt,
       jobType,
       confidence: 0,
+      rawHtml,
+    };
+    
+    // 计算置信度：如果日期是估算的，置信度降低
+    let confidence = this.calculateConfidence(tempJob);
+    if (isDateEstimate) {
+      confidence = Math.max(0.1, confidence - 0.1);
+    }
+
+    return {
+      title: title.trim(),
+      company: company || "未知公司",
+      location,
+      salary,
+      description,
+      requirements: null,
+      education,
+      educationConfidence: eduResult.hasConflict ? 0.3 : eduResult.fromDescription ? 0.9 : 0.6,
+      sourceUrl: url,
+      publishedAt,
+      jobType,
+      confidence,
       rawHtml,
     };
   }
@@ -428,8 +453,9 @@ export class UniversalJobParser {
 
   /**
    * 从上下文中提取日期
+   * @returns {date: Date | null, isEstimate: boolean}
    */
-  private extractDateFromContext(text: string): Date | null {
+  private extractDateFromContext(text: string): { date: Date | null; isEstimate: boolean } {
     // 找日期格式的文本
     const datePatterns = [
       /\d{4}[-\/.]\d{1,2}[-\/.]\d{1,2}/,
@@ -443,12 +469,12 @@ export class UniversalJobParser {
       const match = text.match(pattern);
       if (match) {
         const dateStr = match[1] || match[0];
-        const date = parseDate(dateStr);
-        if (date) return date;
+        const result = parseDate(dateStr);
+        if (result.date) return result;
       }
     }
 
-    return null;
+    return { date: null, isEstimate: false };
   }
 
   /**
@@ -606,6 +632,9 @@ export class UniversalJobParser {
 
     // 提取学历
     const eduResult = extractEducation(title, content);
+    
+    // 提取日期
+    const dateResult = this.extractDateFromContext(content);
 
     return {
       title,
@@ -613,7 +642,7 @@ export class UniversalJobParser {
       education: eduResult.education,
       educationConfidence: eduResult.fromDescription ? 0.9 : 0.6,
       location: extractPrimaryLocation(content),
-      publishedAt: this.extractDateFromContext(content),
+      publishedAt: dateResult.date,
       salary: this.extractSalary(content),
       sourceUrl: pageUrl,
     };
@@ -697,8 +726,11 @@ ${job.rawHtml.slice(0, 3000)}
         job.educationConfidence = 0.95;
       }
       if (parsed.published_at) {
-        const d = parseDate(parsed.published_at);
-        if (d) job.publishedAt = d;
+        const dateResult = parseDate(parsed.published_at);
+        if (dateResult.date) {
+          job.publishedAt = dateResult.date;
+          if (dateResult.isEstimate) job.confidence = Math.max(0.1, job.confidence - 0.1);
+        }
       }
 
       // 重新计算置信度

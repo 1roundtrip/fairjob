@@ -41,6 +41,40 @@ export const EDUCATION_VIEW_LABELS: Record<string, string> = {
 export const BACHELOR_VIEW_LABEL = "本科生专属";
 export const ASSOCIATE_VIEW_LABEL = "专科生专属";
 
+// ==================== 时间相关常量 ====================
+
+/**
+ * 默认展示最近多少天的职位
+ */
+export const RECENT_DAYS = 30;
+
+/**
+ * 最大允许展示的天数
+ */
+export const MAX_RECENT_DAYS = 365;
+
+/**
+ * 时间范围快捷选项
+ */
+export const DATE_RANGE_OPTIONS = [
+  { label: "最近3天", days: 3 },
+  { label: "最近7天", days: 7 },
+  { label: "最近30天", days: 30 },
+  { label: "最近90天", days: 90 },
+  { label: "全部", days: 0 },
+] as const;
+
+/**
+ * 获取日期范围
+ */
+export function getDateRange(days: number): Date | null {
+  if (days === 0) return null; // 全部
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 /**
  * 来源类型
  */

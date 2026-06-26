@@ -50,7 +50,8 @@ export class RssCrawler {
         const title = item.title || "";
         const link = item.link || item.guid || "";
         const content = item.contentSnippet || item.content || "";
-        const pubDate = item.pubDate ? parseDate(item.pubDate) : null;
+        const pubDateResult = item.pubDate ? parseDate(item.pubDate) : null;
+        const pubDate = pubDateResult?.date || null;
 
         if (!title || !link) continue;
 

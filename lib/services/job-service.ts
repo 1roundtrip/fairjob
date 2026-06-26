@@ -3,7 +3,11 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { type EducationLevel } from "@/lib/constants";
+import {
+  type EducationLevel,
+  RECENT_DAYS,
+  getDateRange,
+} from "@/lib/constants";
 import { CHINA_CITIES } from "@/lib/cities";
 
 export interface JobListQuery {
@@ -14,6 +18,10 @@ export interface JobListQuery {
   education?: EducationLevel[];
   source?: string;
   sortBy?: "newest" | "salary_desc" | "salary_asc";
+  /** 时间范围（天数），0表示全部，默认30天 */
+  days?: number;
+  /** 是否包含日期未知的职位，默认true */
+  includeUnknownDate?: boolean;
 }
 
 export interface JobListResult {
@@ -21,6 +29,8 @@ export interface JobListResult {
   total: number;
   page: number;
   pageSize: number;
+  /** 实际使用的时间过滤天数 */
+  daysUsed: number;
 }
 
 function getLocationFilter(location: string) {
@@ -42,12 +52,15 @@ function getLocationFilter(location: string) {
 
 /**
  * 查询职位列表
- * 默认按发布时间倒序（反算法原则：不根据用户行为调整）
+ * 默认展示最近30天内的职位（反算法原则：不根据用户行为调整）
+ * 时间过滤可以确保用户看到的是新鲜的岗位数据
  */
 export async function getJobList(query: JobListQuery): Promise<JobListResult> {
   const page = query.page || 1;
   const pageSize = query.pageSize || 20;
   const skip = (page - 1) * pageSize;
+  const days = query.days ?? RECENT_DAYS;
+  const includeUnknownDate = query.includeUnknownDate ?? true;
 
   const where: any = {};
   const andConditions: any[] = [];
@@ -76,6 +89,30 @@ export async function getJobList(query: JobListQuery): Promise<JobListResult> {
     where.sourceName = query.source;
   }
 
+  // 时间过滤：只展示最近N天的职位
+  const sinceDate = getDateRange(days);
+  if (sinceDate) {
+    andConditions.push({
+      OR: [
+        // 在指定日期之后的职位
+        { publishedAt: { gte: sinceDate } },
+        // 或者日期为null但创建时间在指定日期之后的（新建的职位，即使没明确发布日期也展示）
+        {
+          AND: [
+            { publishedAt: null },
+            { createdAt: { gte: sinceDate } },
+          ],
+        },
+      ],
+    });
+  }
+
+  // 日期未知处理
+  if (!includeUnknownDate && !sinceDate) {
+    // 当显示全部时，可选择排除日期未知的
+    where.publishedAt = { not: null };
+  }
+
   if (andConditions.length > 0) {
     where.AND = andConditions;
   }
@@ -91,7 +128,7 @@ export async function getJobList(query: JobListQuery): Promise<JobListResult> {
   const [items, total] = await Promise.all([
     prisma.job.findMany({
       where,
-      orderBy: [orderBy, { createdAt: "desc" }],
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
       skip,
       take: pageSize,
       select: {
@@ -115,7 +152,7 @@ export async function getJobList(query: JobListQuery): Promise<JobListResult> {
     prisma.job.count({ where }),
   ]);
 
-  return { items, total, page, pageSize };
+  return { items, total, page, pageSize, daysUsed: days };
 }
 
 /**

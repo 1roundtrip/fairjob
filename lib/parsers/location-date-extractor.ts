@@ -108,44 +108,75 @@ export function extractPrimaryLocation(text: string): string | null {
  * 支持格式:
  * - 2024-01-15 / 2024/01/15 / 2024.01.15
  * - 2024年1月15日 / 2024年01月15日
- * - 1月15日 / 01-15 (默认当年)
+ * - 1月15日 / 01-15 (默认当年，如果在未来则减一年)
  * - 今天 / 昨天 / 前天
- * - N天前 / N日前
- * - 刚刚 / 几分钟前
+ * - N天前 / N日前 / N天前发布
+ * - 刚刚 / 几分钟前 / N小时前
+ * - N周前
+ * 
+ * @param text 日期文本
+ * @param crawlTime 可选的抓取时间，用于"近似日期"场景
+ * @returns 解析后的日期，如果无法解析返回null
  */
-export function parseDate(text: string | null | undefined): Date | null {
-  if (!text) return null;
+export function parseDate(
+  text: string | null | undefined,
+  crawlTime?: Date
+): { date: Date | null; isEstimate: boolean } {
+  if (!text) return { date: null, isEstimate: false };
 
   const now = new Date();
   const cleanText = text.trim();
 
   // 今天/昨天/前天
   if (cleanText === "今天" || cleanText === "今日") {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return { date: new Date(now.getFullYear(), now.getMonth(), now.getDate()), isEstimate: false };
   }
   if (cleanText === "昨天" || cleanText === "昨日") {
     const d = new Date(now);
     d.setDate(d.getDate() - 1);
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), isEstimate: false };
   }
   if (cleanText === "前天") {
     const d = new Date(now);
     d.setDate(d.getDate() - 2);
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), isEstimate: false };
   }
 
-  // N天前 / N日前
-  const daysAgoMatch = cleanText.match(/(\d+)\s*天[前以]/);
+  // N天前 / N日前 / N天前发布
+  let daysAgoMatch = cleanText.match(/(\d+)\s*天[前以][\s发布]*/);
   if (daysAgoMatch) {
     const days = parseInt(daysAgoMatch[1], 10);
     const d = new Date(now);
     d.setDate(d.getDate() - days);
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), isEstimate: false };
   }
 
-  // 刚刚 / 几分钟前 / N小时前
-  if (cleanText === "刚刚" || cleanText === "今日发布" || cleanText.includes("分钟前") || cleanText.includes("小时前")) {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // N周前
+  const weeksAgoMatch = cleanText.match(/(\d+)\s*周[前以]/);
+  if (weeksAgoMatch) {
+    const weeks = parseInt(weeksAgoMatch[1], 10);
+    const d = new Date(now);
+    d.setDate(d.getDate() - weeks * 7);
+    return { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), isEstimate: false };
+  }
+
+  // N个月前
+  const monthsAgoMatch = cleanText.match(/(\d+)\s*个?[月前]/);
+  if (monthsAgoMatch) {
+    const months = parseInt(monthsAgoMatch[1], 10);
+    const d = new Date(now);
+    d.setMonth(d.getMonth() - months);
+    return { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), isEstimate: false };
+  }
+
+  // 刚刚 / 几分钟前 / N小时前 / N小时前发布
+  if (
+    cleanText === "刚刚" ||
+    cleanText === "今日发布" ||
+    /[几\d+\s]*分钟[前以]/.test(cleanText) ||
+    /\d+\s*小时[前以]/.test(cleanText)
+  ) {
+    return { date: new Date(now.getFullYear(), now.getMonth(), now.getDate()), isEstimate: false };
   }
 
   // YYYY-MM-DD / YYYY/MM/DD / YYYY.MM.DD
@@ -155,7 +186,7 @@ export function parseDate(text: string | null | undefined): Date | null {
     const month = parseInt(match[2], 10) - 1;
     const day = parseInt(match[3], 10);
     const d = new Date(year, month, day);
-    if (!isNaN(d.getTime())) return d;
+    if (!isNaN(d.getTime())) return { date: d, isEstimate: false };
   }
 
   // YYYY年MM月DD日
@@ -165,7 +196,7 @@ export function parseDate(text: string | null | undefined): Date | null {
     const month = parseInt(match[2], 10) - 1;
     const day = parseInt(match[3], 10);
     const d = new Date(year, month, day);
-    if (!isNaN(d.getTime())) return d;
+    if (!isNaN(d.getTime())) return { date: d, isEstimate: false };
   }
 
   // MM月DD日 / MM-DD (当年)
@@ -177,10 +208,11 @@ export function parseDate(text: string | null | undefined): Date | null {
     if (!isNaN(d.getTime())) {
       // 如果日期在未来（说明应该是去年），则减一年
       if (d > now) d.setFullYear(d.getFullYear() - 1);
-      return d;
+      return { date: d, isEstimate: false };
     }
   }
 
+  // MM-DD 格式
   match = cleanText.match(/^(\d{1,2})-(\d{1,2})$/);
   if (match) {
     const month = parseInt(match[1], 10) - 1;
@@ -188,9 +220,33 @@ export function parseDate(text: string | null | undefined): Date | null {
     const d = new Date(now.getFullYear(), month, day);
     if (!isNaN(d.getTime())) {
       if (d > now) d.setFullYear(d.getFullYear() - 1);
-      return d;
+      return { date: d, isEstimate: false };
     }
   }
 
-  return null;
+  // DD/MM/YYYY 或 DD-MM-YYYY (日/月/年)
+  match = cleanText.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
+  if (match) {
+    // 假设是 日/月/年
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1;
+    const year = parseInt(match[3], 10);
+    const d = new Date(year, month, day);
+    if (!isNaN(d.getTime())) return { date: d, isEstimate: false };
+  }
+
+  // 无法解析，返回抓取时间作为近似值（置信度降0.1）
+  if (crawlTime) {
+    return { date: new Date(crawlTime.getFullYear(), crawlTime.getMonth(), crawlTime.getDate()), isEstimate: true };
+  }
+
+  return { date: null, isEstimate: false };
+}
+
+/**
+ * 兼容旧API - 仅返回日期
+ * @deprecated 使用 parseDate 返回 {date, isEstimate} 代替
+ */
+export function parseDateLegacy(text: string | null | undefined): Date | null {
+  return parseDate(text).date;
 }
