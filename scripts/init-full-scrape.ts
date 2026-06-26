@@ -21,6 +21,11 @@ import * as cheerio from "cheerio";
 import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "js-yaml";
+import {
+  getUniversitySources,
+  getVocationalSources,
+  SOURCE_STATS,
+} from "@/lib/data/universities";
 
 const prisma = new PrismaClient();
 
@@ -502,6 +507,37 @@ async function main() {
       console.log(`  = ${src.name} (已存在)`);
     }
   }
+
+  // 添加双一流高校数据源
+  console.log("\n🏛️ 添加双一流高校就业网...");
+  const universitySources = getUniversitySources();
+  for (const src of universitySources.slice(0, 30)) {
+    // 先添加30所知名高校
+    const existing = await prisma.source.findFirst({ where: { url: src.url } });
+    if (!existing) {
+      await prisma.source.create({ data: src });
+      sourceCreated++;
+      console.log(`  + ${src.name}`);
+    }
+  }
+
+  // 添加高职院校数据源
+  console.log("\n🏭 添加高职院校就业网...");
+  const vocationalSources = getVocationalSources();
+  for (const src of vocationalSources.slice(0, 30)) {
+    // 先添加30所高职院校
+    const existing = await prisma.source.findFirst({ where: { url: src.url } });
+    if (!existing) {
+      await prisma.source.create({ data: src });
+      sourceCreated++;
+      console.log(`  + ${src.name}`);
+    }
+  }
+
+  console.log(`\n📊 数据源统计: 新增 ${sourceCreated}, 跳过 ${sourceSkipped}`);
+  console.log(
+    `   共有 ${universitySources.length} 所双一流高校, ${vocationalSources.length} 所高职院校可添加`
+  );
 
   // 读取配置文件中的额外源
   try {

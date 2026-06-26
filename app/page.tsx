@@ -61,6 +61,21 @@ export default async function Home({
     getNewCompaniesThisWeek(8),
   ]);
 
+  // 专科生视角下，获取本科生岗位作为"探索更多可能"
+  let exploreMoreJobs: typeof jobList.items = [];
+  if (filterMode === "associate") {
+    exploreMoreJobs = (
+      await getJobList({
+        page: 1,
+        pageSize: 6,
+        keyword,
+        location,
+        education: BACHELOR_FILTER,
+        sortBy: "newest",
+      })
+    ).items;
+  }
+
   const totalPages = Math.ceil(jobList.total / jobList.pageSize);
 
   return (
@@ -166,6 +181,68 @@ export default async function Home({
                 >
                   查看全部
                 </Link>
+              </div>
+            </div>
+          )}
+
+          {/* 专科生视角：探索更多可能 */}
+          {filterMode === "associate" && exploreMoreJobs.length > 0 && (
+            <div
+              className="mb-8 opacity-0 animate-fade-in-up"
+              style={{ animationDelay: "280ms", animationFillMode: "forwards" }}
+            >
+              <div className="glass-card p-6 border border-indigo-400/20">
+                <div className="flex items-center gap-2 mb-4">
+                  <svg
+                    className="w-5 h-5 text-indigo-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                    />
+                  </svg>
+                  <h3 className="text-base font-semibold text-white">探索更多可能</h3>
+                  <span className="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-300 rounded-full">
+                    本科岗位
+                  </span>
+                </div>
+                <p className="text-sm text-white/50 mb-4">
+                  学历只是门槛，能力才是关键。这些岗位虽要求本科，但值得尝试。
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {exploreMoreJobs.map((job) => (
+                    <JobCard key={job.id} job={job} className="!p-4" />
+                  ))}
+                </div>
+                <div className="mt-4 text-center">
+                  <Link
+                    href={{
+                      pathname: "/",
+                      query: { ...searchParams, mode: "bachelor" },
+                    }}
+                    className="inline-flex items-center gap-1.5 text-sm text-indigo-300 hover:text-indigo-200 transition-colors"
+                  >
+                    查看更多本科岗位
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </Link>
+                </div>
               </div>
             </div>
           )}
