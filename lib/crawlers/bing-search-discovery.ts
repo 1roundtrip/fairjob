@@ -25,6 +25,13 @@ const SEARCH_QUERY_TEMPLATES = [
   // 按专业
   '"计算机 招聘" site:edu.cn',
   '"软件工程师" 校招 site:edu.cn',
+  // 主流招聘平台
+  '"岗位" site:zhipin.com',
+  '"招聘" site:liepin.com',
+  '"校园招聘" site:51job.com',
+  '"校招" site:zhaopin.com',
+  '"岗位" site:lagou.com',
+  '"招聘" site:nowcoder.com',
 ];
 
 export interface BingSearchOptions {
@@ -264,6 +271,28 @@ export class BingSearchDiscovery {
       `"产品经理" 实习 site:edu.cn`,
       `"央企" 招聘 site:edu.cn`,
       `"国企" 校招 site:edu.cn`,
+      // 主流招聘平台搜索
+      `"${year}届 校招" site:zhipin.com`,
+      `"校园招聘" site:zhipin.com`,
+      `"${year}届 校招" site:liepin.com`,
+      `"校园招聘" site:liepin.com`,
+      `"${year}届 校招" site:51job.com`,
+      `"校园招聘" site:51job.com`,
+      `"${year}届 校招" site:zhaopin.com`,
+      `"校园招聘" site:zhaopin.com`,
+      `"${year}届 校招" site:lagou.com`,
+      `"校园招聘" site:lagou.com`,
+      `"${year}届 校招" site:nowcoder.com`,
+      // 热门城市
+      `"北京" 校招 site:edu.cn`,
+      `"上海" 校招 site:edu.cn`,
+      `"深圳" 校招 site:edu.cn`,
+      `"杭州" 校招 site:edu.cn`,
+      // 热门岗位
+      `"前端开发" 校招 site:edu.cn`,
+      `"后端开发" 校招 site:edu.cn`,
+      `"算法工程师" 校招 site:edu.cn`,
+      `"数据分析师" 校招 site:edu.cn`,
     ];
   }
 }
