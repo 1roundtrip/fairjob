@@ -76,6 +76,7 @@ model Job {
 
   // 质量评分
   confidence    Float      @default(0)
+  failCount     Int        @default(0)
 
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -86,6 +87,7 @@ model Job {
   @@index([company, title])
   @@index([sourceId])
   @@index([createdAt])
+  @@index([confidence])
 }
 
 // ==================== 待审核职位模型 ====================
