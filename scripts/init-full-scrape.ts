@@ -310,9 +310,12 @@ function parseJobsFromHtml(html: string, baseUrl: string): any[] {
 
       // 补全相对链接
       let fullUrl = href;
-      if (href.startsWith("/")) {
-        const base = new URL(baseUrl);
-        fullUrl = `${base.protocol}//${base.host}${href}`;
+      if (!href.startsWith("http://") && !href.startsWith("https://")) {
+        try {
+          fullUrl = new URL(href, baseUrl).toString();
+        } catch {
+          fullUrl = "";
+        }
       }
 
       // 尝试从周围文本提取信息
@@ -580,8 +583,8 @@ async function main() {
     const entPath = path.join(process.cwd(), "data", "enterprise_sites.yaml");
     if (fs.existsSync(entPath)) {
       const config = yaml.load(fs.readFileSync(entPath, "utf-8")) as any;
-      if (config?.enterprises) {
-        for (const ent of config.enterprises.slice(0, 10)) {
+      const enterprises = Array.isArray(config) ? config : config?.enterprises || [];
+      for (const ent of enterprises.slice(0, 10)) {
           const existing = await prisma.source.findFirst({
             where: { url: ent.url },
           });
@@ -599,7 +602,6 @@ async function main() {
             console.log(`  + ${ent.name}`);
           }
         }
-      }
     }
   } catch {}
 

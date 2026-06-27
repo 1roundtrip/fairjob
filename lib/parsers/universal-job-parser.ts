@@ -576,31 +576,33 @@ export class UniversalJobParser {
   }
 
   /**
-   * 获取基础 URL
+   * 获取基础 URL — 取页面所在目录，用于解析相对链接
    */
   private getBaseUrl(pageUrl: string): string {
     try {
       const url = new URL(pageUrl);
-      return `${url.protocol}//${url.host}`;
+      const path = url.pathname.replace(/\/[^/]*$/, '/');
+      return `${url.protocol}//${url.host}${path}`;
     } catch {
       return pageUrl;
     }
   }
 
   /**
-   * 补全相对 URL
+   * 补全相对 URL — 使用标准 URL 解析，正确处理所有相对路径
    */
   private resolveUrl(href: string, baseUrl: string): string {
     if (href.startsWith("http://") || href.startsWith("https://")) {
       return href;
     }
-    if (href.startsWith("//")) {
-      return "https:" + href;
+    if (href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("#")) {
+      return "";
     }
-    if (href.startsWith("/")) {
-      return baseUrl + href;
+    try {
+      return new URL(href, baseUrl).toString();
+    } catch {
+      return "";
     }
-    return baseUrl + "/" + href;
   }
 
   /**

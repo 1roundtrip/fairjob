@@ -43,5 +43,5 @@ export async function requireAdmin(): Promise<boolean> {
 }
 
 export async function validateAdminCredentials(username: string, password: string): Promise<boolean> {
-  return username === ADMIN_USERNAME && verifyPassword(password, ADMIN_PASSWORD_HASH);
+  return username === ADMIN_USERNAME && await verifyPassword(password, ADMIN_PASSWORD_HASH);
 }
