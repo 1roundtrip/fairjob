@@ -128,7 +128,7 @@ export async function getJobList(query: JobListQuery): Promise<JobListResult> {
   const [items, total] = await Promise.all([
     prisma.job.findMany({
       where,
-      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      orderBy: query.sortBy ? orderBy : [{ publishedAt: "desc" }, { createdAt: "desc" }],
       skip,
       take: pageSize,
       select: {
@@ -180,68 +180,56 @@ export async function getRandomJobs(
     }
   }
 
-  // 获取所有符合条件的职位
+  const selectFields = {
+    id: true,
+    title: true,
+    company: true,
+    location: true,
+    salary: true,
+    education: true,
+    jobType: true,
+    publishedAt: true,
+    sourceName: true,
+    sourceUrl: true,
+  } as const;
+
+  // 先查总数，再随机偏移取一批，避免全量加载
+  const total = await prisma.job.count({ where });
+  if (total === 0) return [];
+
+  const batchSize = Math.min(count * 3, total);
+  const offset = Math.floor(Math.random() * Math.max(0, total - batchSize));
+
   const allJobs = await prisma.job.findMany({
     where,
-    select: {
-      id: true,
-      title: true,
-      company: true,
-      location: true,
-      salary: true,
-      education: true,
-      jobType: true,
-      publishedAt: true,
-      sourceName: true,
-      sourceUrl: true,
-    },
-    // 取足够多的数据用于随机
-    take: 500,
-    orderBy: { publishedAt: "desc" },
+    select: selectFields,
+    take: batchSize,
+    skip: offset,
+    orderBy: { id: "asc" },
   });
 
-  if (allJobs.length === 0) return [];
-
-  // 按公司分组，保证多样性
-  const byCompany = new Map<string, any[]>();
-  for (const job of allJobs) {
-    if (!byCompany.has(job.company)) {
-      byCompany.set(job.company, []);
-    }
-    byCompany.get(job.company)!.push(job);
-  }
-
-  const companies = Array.from(byCompany.keys());
-
-  // Fisher-Yates 洗牌
-  for (let i = companies.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [companies[i], companies[j]] = [companies[j], companies[i]];
-  }
-
-  // 从每个公司选一个职位，直到凑够 count 个
+  // 按公司分组，每公司最多选一个，保证多样性
+  const seen = new Set<string>();
   const result: any[] = [];
-  for (const company of companies) {
-    if (result.length >= count) break;
-    const companyJobs = byCompany.get(company)!;
-    const randomJob = companyJobs[Math.floor(Math.random() * companyJobs.length)];
-    result.push(randomJob);
-  }
-
-  // 如果不够 count，再从剩余中补
-  if (result.length < count && allJobs.length > result.length) {
-    const remaining = allJobs.filter(
-      (j) => !result.some((r) => r.id === j.id)
-    );
-    // 打乱
-    for (let i = remaining.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+  for (const job of allJobs) {
+    if (!seen.has(job.company)) {
+      seen.add(job.company);
+      result.push(job);
+      if (result.length >= count) break;
     }
-    result.push(...remaining.slice(0, count - result.length));
   }
 
-  return result;
+  // 不够则从剩余中补齐
+  if (result.length < count) {
+    for (const job of allJobs) {
+      if (result.length >= count) break;
+      if (!result.some((r: any) => r.id === job.id)) {
+        result.push(job);
+      }
+    }
+  }
+
+  return result.slice(0, count);
 }
 
 /**

@@ -9,17 +9,16 @@ import { prisma } from "@/lib/prisma";
 import { crawlScheduler } from "@/lib/crawlers/crawl-scheduler";
 import { sendDailyReport } from "@/lib/services/monitoring";
 
-// Vercel Cron 的认证密钥（防止他人恶意触发）
 const CRON_SECRET = process.env.CRON_SECRET || "";
 
-/**
- * GET /api/cron/incremental-crawl
- * 增量抓取所有活跃数据源
- */
-export async function GET(request: Request) {
-  // 验证 Cron 请求来源（可选，Vercel 会自动添加）
+function verifyCronAuth(request: Request): boolean {
+  if (!CRON_SECRET) return false;
   const authHeader = request.headers.get("authorization");
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  return authHeader === `Bearer ${CRON_SECRET}`;
+}
+
+export async function GET(request: Request) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

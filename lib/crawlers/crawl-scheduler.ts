@@ -113,16 +113,24 @@ export class CrawlScheduler {
     let totalJobsMerged = 0;
     let totalJobsReview = 0;
     const errors: { sourceId: number; sourceName: string; error: string }[] = [];
+    let consecutiveFailures = 0;
 
     for (const source of sources) {
+      if (consecutiveFailures >= 5) {
+        console.log("[Crawler] 连续失败 5 次，跳过剩余数据源");
+        break;
+      }
+
       const result = await this.crawlSource(source.id);
       if (result.success) {
         successSources++;
+        consecutiveFailures = 0;
         totalJobsFound += result.jobsFound;
         totalJobsAdded += result.jobsAdded;
         totalJobsMerged += result.jobsMerged;
         totalJobsReview += result.jobsReview;
       } else if (result.error) {
+        consecutiveFailures++;
         errors.push({
           sourceId: source.id,
           sourceName: source.name,

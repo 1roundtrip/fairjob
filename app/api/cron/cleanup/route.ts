@@ -10,9 +10,9 @@ import { prisma } from "@/lib/prisma";
 import { diceCoefficient } from "@/lib/dice-similarity";
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
   const CRON_SECRET = process.env.CRON_SECRET || "";
-  if (CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}`) {
+  const authHeader = request.headers.get("authorization");
+  if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

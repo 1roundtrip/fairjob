@@ -12,11 +12,11 @@ services:
       - ./backend:/app
       - ./data:/app/data
     environment:
-      - DATABASE_URL=sqlite:///./data/jobs.db
+      - DATABASE_URL=file:./data/jobs.db
       - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
       - API_V1_PREFIX=/api/v1
       - PROJECT_NAME=聚合求职平台
-      - DEBUG=true
+      - DEBUG=false
     networks:
       - job-network
     restart: unless-stopped
@@ -48,7 +48,7 @@ services:
       - ./scraper:/app
       - ./data:/app/data
     environment:
-      - DATABASE_URL=sqlite:///./data/jobs.db
+      - DATABASE_URL=file:./data/jobs.db
       - BACKEND_API_URL=http://backend:8000/api/v1
       - SCRAPE_INTERVAL_MINUTES=60
       - LOG_LEVEL=INFO

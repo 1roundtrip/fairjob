@@ -162,10 +162,16 @@ export class UniversalWebCrawler extends BaseCrawler {
       }
 
       // 相似度去重
+      const searchPrefix = job.company.slice(0, Math.min(4, job.company.length));
+      if (!searchPrefix) {
+        await prisma.job.create({ data: job as any });
+        jobsAdded++;
+        continue;
+      }
       const similarJobs = await prisma.job.findMany({
         where: {
           company: {
-            contains: job.company.slice(0, Math.min(4, job.company.length)),
+            contains: searchPrefix,
           },
         },
         take: 20,
@@ -226,34 +232,48 @@ export class UniversalWebCrawler extends BaseCrawler {
   }
 
   private async updateCompanyStat(companyName: string): Promise<void> {
-    const existing = await prisma.companyStat.findUnique({
-      where: { companyName },
-    });
+    const today = new Date();
 
-    if (existing) {
-      const today = new Date().toDateString();
-      const lastSeenDay = existing.lastSeen.toDateString();
-      const newDayCount = today !== lastSeenDay ? existing.dayCount + 1 : existing.dayCount;
-      const newJobCount = existing.jobCount + 1;
-
-      await prisma.companyStat.update({
+    try {
+      // 先尝试 upsert，避免 read-modify-write 竞态
+      const existing = await prisma.companyStat.findUnique({
         where: { companyName },
-        data: {
-          jobCount: newJobCount,
-          dayCount: newDayCount,
-          avgJobsPerDay: newJobCount / Math.max(1, newDayCount),
-          lastSeen: new Date(),
-        },
+        select: { lastSeen: true },
       });
-    } else {
-      await prisma.companyStat.create({
-        data: {
+
+      const isNewDay = !existing || existing.lastSeen.toDateString() !== today.toDateString();
+
+      await prisma.companyStat.upsert({
+        where: { companyName },
+        create: {
           companyName,
           jobCount: 1,
           dayCount: 1,
           avgJobsPerDay: 1,
+          lastSeen: today,
+        },
+        update: {
+          jobCount: { increment: 1 },
+          dayCount: isNewDay ? { increment: 1 } : undefined,
+          lastSeen: today,
         },
       });
+
+      // avgJobsPerDay 需要重新计算（Prisma 不支持除法 increment）
+      if (existing) {
+        const stat = await prisma.companyStat.findUnique({
+          where: { companyName },
+          select: { jobCount: true, dayCount: true },
+        });
+        if (stat) {
+          await prisma.companyStat.update({
+            where: { companyName },
+            data: { avgJobsPerDay: stat.jobCount / Math.max(1, stat.dayCount) },
+          });
+        }
+      }
+    } catch {
+      // 并发冲突时忽略，下次会重试
     }
   }
 }

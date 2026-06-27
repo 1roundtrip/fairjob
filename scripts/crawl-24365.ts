@@ -348,7 +348,7 @@ async function crawl24365() {
           totalJobsFound++;
         }
 
-        console.write(`(${result.jobs.length}条)`);
+        process.stdout.write(`(${result.jobs.length}条)`);
         page++;
 
         if (result.total > page * 20) {

@@ -208,10 +208,12 @@ export class RssCrawler {
       }
 
       // 相似度去重
+      const searchPrefix = job.company.slice(0, Math.min(4, job.company.length));
+      if (!searchPrefix) continue;
       const similarJobs = await prisma.job.findMany({
         where: {
           company: {
-            contains: job.company.slice(0, 4), // 用前4个字符快速过滤
+            contains: searchPrefix,
           },
         },
         take: 20,
@@ -231,7 +233,7 @@ export class RssCrawler {
         ) {
           // 合并：追加 source 信息
           const mergedIds: number[] = existing.mergedJobIds
-            ? JSON.parse(existing.mergedJobIds)
+            ? (() => { try { return JSON.parse(existing.mergedJobIds); } catch { return []; } })()
             : [];
 
           await prisma.job.update({
@@ -278,34 +280,41 @@ export class RssCrawler {
   }
 
   private async updateCompanyStat(companyName: string): Promise<void> {
-    const existing = await prisma.companyStat.findUnique({
-      where: { companyName },
-    });
+    const today = new Date();
+    const todayStr = today.toDateString();
 
-    if (existing) {
-      const today = new Date().toDateString();
-      const lastSeenDay = existing.lastSeen.toDateString();
-      const newDayCount = today !== lastSeenDay ? existing.dayCount + 1 : existing.dayCount;
-      const newJobCount = existing.jobCount + 1;
-
-      await prisma.companyStat.update({
+    try {
+      const existing = await prisma.companyStat.findUnique({
         where: { companyName },
-        data: {
-          jobCount: newJobCount,
-          dayCount: newDayCount,
-          avgJobsPerDay: newJobCount / Math.max(1, newDayCount),
-          lastSeen: new Date(),
-        },
       });
-    } else {
-      await prisma.companyStat.create({
-        data: {
-          companyName,
-          jobCount: 1,
-          dayCount: 1,
-          avgJobsPerDay: 1,
-        },
-      });
+
+      if (existing) {
+        const lastSeenDay = existing.lastSeen.toDateString();
+        const newDayCount = todayStr !== lastSeenDay ? existing.dayCount + 1 : existing.dayCount;
+        const newJobCount = existing.jobCount + 1;
+
+        await prisma.companyStat.update({
+          where: { companyName },
+          data: {
+            jobCount: newJobCount,
+            dayCount: newDayCount,
+            avgJobsPerDay: newJobCount / Math.max(1, newDayCount),
+            lastSeen: today,
+          },
+        });
+      } else {
+        await prisma.companyStat.create({
+          data: {
+            companyName,
+            jobCount: 1,
+            dayCount: 1,
+            avgJobsPerDay: 1,
+            lastSeen: today,
+          },
+        });
+      }
+    } catch {
+      // 并发冲突时忽略
     }
   }
 }

@@ -2,12 +2,20 @@ import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'fairjob-admin-secret-key-change-in-production'
-);
+function getJwtSecret(): Uint8Array {
+  const raw = process.env.JWT_SECRET;
+  if (!raw) throw new Error('JWT_SECRET environment variable is required');
+  return new TextEncoder().encode(raw);
+}
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'round';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+function getAdminCredentials() {
+  const username = process.env.ADMIN_USERNAME;
+  const passwordHash = process.env.ADMIN_PASSWORD_HASH;
+  if (!username || !passwordHash) {
+    throw new Error('ADMIN_USERNAME and ADMIN_PASSWORD_HASH environment variables are required');
+  }
+  return { username, passwordHash };
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -21,12 +29,12 @@ export async function createSession(userId: string): Promise<string> {
   return new SignJWT({ userId })
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime('7d')
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifySession(token: string): Promise<{ userId: string } | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload as { userId: string };
   } catch {
     return null;
@@ -43,5 +51,8 @@ export async function requireAdmin(): Promise<boolean> {
 }
 
 export async function validateAdminCredentials(username: string, password: string): Promise<boolean> {
-  return username === ADMIN_USERNAME && await verifyPassword(password, ADMIN_PASSWORD_HASH);
+  const { username: adminUser, passwordHash } = getAdminCredentials();
+  const usernameValid = username === adminUser;
+  const passwordValid = usernameValid && await verifyPassword(password, passwordHash);
+  return passwordValid;
 }

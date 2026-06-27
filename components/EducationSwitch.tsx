@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type ViewMode = "ALL" | "BACHELOR" | "ASSOCIATE";
 
@@ -15,6 +15,8 @@ const views = [
 ];
 
 export default function EducationSwitch({ currentView = "ALL" }: EducationSwitchProps) {
+  const router = useRouter();
+
   return (
     <div className="inline-flex items-center gap-1 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-xl p-1">
       {views.map((view) => (
@@ -27,8 +29,9 @@ export default function EducationSwitch({ currentView = "ALL" }: EducationSwitch
             } else {
               params.set("mode", view.key.toLowerCase());
             }
-            window.location.href = `/?${params.toString()}`;
+            router.push(`/?${params.toString()}`);
           }}
+          aria-pressed={currentView === view.key}
           className={`
             relative px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-300
             ${currentView === view.key

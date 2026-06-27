@@ -33,11 +33,16 @@ export default function FilterBar({
   const [showCityPicker, setShowCityPicker] = useState(false);
 
   useEffect(() => {
-    setKeyword(searchParams.get("keyword") || "");
-    setLocation(searchParams.get("location") || "");
-    setEducation(searchParams.get("education") || "");
-    setDays(parseInt(searchParams.get("days") || RECENT_DAYS.toString(), 10));
-  }, [searchParams]);
+    if (!showCityPicker) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-city-picker]")) {
+        setShowCityPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showCityPicker]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -141,7 +146,7 @@ export default function FilterBar({
       {/* 城市选择 */}
       <div className="flex flex-wrap gap-2">
         <span className="text-xs text-[var(--text-muted)] self-center w-16">城市</span>
-        <div className="relative">
+        <div className="relative" data-city-picker>
           <button
             onClick={() => setShowCityPicker(!showCityPicker)}
             className={`

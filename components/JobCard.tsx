@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { formatDate } from "@/lib/utils";
 import { EDUCATION_LABELS } from "@/lib/constants";
 import EducationBadge from "./EducationBadge";
@@ -31,6 +31,17 @@ export default function JobCard({ job, className = "" }: JobCardProps) {
   const displayDate = job.publishedAt || job.createdAt;
   const isSuspect = (job.failCount || 0) > 0;
   const [showWarning, setShowWarning] = useState(false);
+
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") setShowWarning(false);
+  }, []);
+
+  useEffect(() => {
+    if (showWarning) {
+      document.addEventListener("keydown", handleEscape);
+      return () => document.removeEventListener("keydown", handleEscape);
+    }
+  }, [showWarning, handleEscape]);
 
   // 根据学历选择标签颜色
   const getEducationTagClass = () => {
@@ -140,7 +151,7 @@ export default function JobCard({ job, className = "" }: JobCardProps) {
 
       {/* 失效确认弹窗 */}
       {showWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="warning-title">
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setShowWarning(false)}
@@ -153,7 +164,7 @@ export default function JobCard({ job, className = "" }: JobCardProps) {
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white">链接可能已失效</h3>
+                <h3 id="warning-title" className="text-lg font-semibold text-white">链接可能已失效</h3>
                 <p className="text-sm text-[var(--text-secondary)] mt-1">
                   该职位链接可能已过期，点击确认仍要访问原页面。
                 </p>

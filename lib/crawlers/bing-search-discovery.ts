@@ -110,7 +110,7 @@ export class BingSearchDiscovery {
       }
       // 每个域名之间间隔 8 秒（遵守 robots.txt 精神）
       if (i < maxUrls - 1) {
-        await new Promise((r) => setTimeout(r, 2000)); // 简化：固定 2 秒
+        await new Promise((r) => setTimeout(r, 8000));
       }
     }
 
@@ -201,9 +201,11 @@ export class BingSearchDiscovery {
       }
 
       // 相似度去重
+      const searchPrefix = job.company.slice(0, Math.min(4, job.company.length));
+      if (!searchPrefix) continue;
       const similarJobs = await prisma.job.findMany({
         where: {
-          company: { contains: job.company.slice(0, 4) },
+          company: { contains: searchPrefix },
         },
         take: 10,
       });

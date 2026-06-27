@@ -39,13 +39,13 @@ export async function POST(request: Request) {
 
     const source = await prisma.source.create({
       data: {
-        name,
-        url,
+        name: name.slice(0, 200),
+        url: url.slice(0, 2000),
         type,
         parserType,
         isActive,
-        crawlInterval,
-        config,
+        crawlInterval: Math.min(Math.max(crawlInterval, 10), 1440),
+        config: typeof config === "object" ? JSON.stringify(config).slice(0, 10000) : null,
       },
     });
 

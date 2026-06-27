@@ -76,16 +76,16 @@ const CITIES = [
 export function extractCities(text: string): string[] {
   if (!text) return [];
 
-  const found: string[] = [];
-  const lowerText = text;
+  const found: { city: string; pos: number }[] = [];
 
   for (const city of CITIES) {
-    if (lowerText.includes(city)) {
-      found.push(city);
+    const idx = text.indexOf(city);
+    if (idx !== -1) {
+      found.push({ city, pos: idx });
     }
   }
 
-  return found;
+  return found.sort((a, b) => a.pos - b.pos).map((f) => f.city);
 }
 
 /**
@@ -142,8 +142,8 @@ export function parseDate(
     return { date: new Date(d.getFullYear(), d.getMonth(), d.getDate()), isEstimate: false };
   }
 
-  // N天前 / N日前 / N天前发布
-  let daysAgoMatch = cleanText.match(/(\d+)\s*天[前以][\s发布]*/);
+  // N天前 / N天以前发布（排除"天以内"）
+  let daysAgoMatch = cleanText.match(/(\d+)\s*天(?:以前?)[\s发布]*/);
   if (daysAgoMatch) {
     const days = parseInt(daysAgoMatch[1], 10);
     const d = new Date(now);
@@ -161,7 +161,7 @@ export function parseDate(
   }
 
   // N个月前
-  const monthsAgoMatch = cleanText.match(/(\d+)\s*个?[月前]/);
+  const monthsAgoMatch = cleanText.match(/(\d+)\s*个?月前/);
   if (monthsAgoMatch) {
     const months = parseInt(monthsAgoMatch[1], 10);
     const d = new Date(now);
@@ -224,15 +224,23 @@ export function parseDate(
     }
   }
 
-  // DD/MM/YYYY 或 DD-MM-YYYY (日/月/年)
+  // DD/MM/YYYY 或 DD-MM-YYYY（启发式：月日均<=12 时有歧义，标记为估算）
   match = cleanText.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
   if (match) {
-    // 假设是 日/月/年
-    const day = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10) - 1;
+    const a = parseInt(match[1], 10);
+    const b = parseInt(match[2], 10);
     const year = parseInt(match[3], 10);
-    const d = new Date(year, month, day);
-    if (!isNaN(d.getTime())) return { date: d, isEstimate: false };
+    // 当月日都<=12时无法确定顺序，标记为估算值
+    const isAmbiguous = a <= 12 && b <= 12;
+    // 尝试 月/日/年 和 日/月/年，取第一个合法的
+    for (const [m, d] of [[a, b], [b, a]]) {
+      const month = m - 1;
+      const day = d;
+      const parsed = new Date(year, month, day);
+      if (!isNaN(parsed.getTime())) {
+        return { date: parsed, isEstimate: isAmbiguous };
+      }
+    }
   }
 
   // 无法解析，返回抓取时间作为近似值（置信度降0.1）

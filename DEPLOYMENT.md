@@ -4,7 +4,7 @@
 
 - **前端**: Next.js 14 (App Router) + TypeScript + Tailwind CSS
 - **后端**: Next.js API Routes + Server Components
-- **数据库**: SQLite（开发） / PostgreSQL（生产）
+- **数据库**: SQLite（开发） / Turso (libSQL)（生产）
 - **ORM**: Prisma
 - **抓取**: cheerio + rss-parser + APScheduler (Node.js 实现)
 
@@ -73,7 +73,7 @@ vercel --prod
 
 | 变量名 | 必填 | 说明 | 示例值 |
 |--------|------|------|--------|
-| `DATABASE_URL` | ✅ | 数据库连接串 | `file:./dev.db` (SQLite) 或 `postgresql://user:pass@host:5432/db` (PostgreSQL) |
+| `DATABASE_URL` | ✅ | 数据库连接串 | `file:./dev.db` (SQLite) 或 `libsql://your-db.turso.io` (Turso) |
 | `BING_SEARCH_API_KEY` | ❌ | Bing 搜索 API Key，用于发现新职位 | `xxxxxxxxxxxx` |
 | `BING_SEARCH_ENDPOINT` | ❌ | Bing 搜索 API 端点 | `https://api.bing.microsoft.com/v7.0/search` |
 | `OPENAI_API_KEY` | ❌ | OpenAI API Key，用于 LLM 增强解析 | `sk-xxxxxxxxxx` |
@@ -93,21 +93,13 @@ DATABASE_URL="file:./dev.db"
 - 缺点：Vercel Serverless 环境下文件系统不可持久化
 - 注意：Vercel 部署 SQLite 数据会在每次部署后重置，仅适合演示
 
-#### PostgreSQL（推荐生产）
+#### Turso（推荐生产）
 
-使用 Vercel Postgres 或其他 PostgreSQL 服务：
+使用 Turso 分布式 SQLite（免费层足够）：
 
 ```
-DATABASE_URL="postgresql://user:password@host:5432/dbname?schema=public"
-```
-
-修改 `prisma/schema.prisma`：
-
-```prisma
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+DATABASE_URL="libsql://your-db-name.turso.io"
+TURSO_AUTH_TOKEN="your-auth-token"
 ```
 
 ### 定时抓取配置
@@ -215,27 +207,25 @@ curl -X POST https://your-domain.com/api/cron
 
 ---
 
-## 从 SQLite 切换到 PostgreSQL
+## 从 SQLite 切换到 Turso
 
-1. 修改 `prisma/schema.prisma`:
-   ```prisma
-   datasource db {
-     provider = "postgresql"
-     url      = env("DATABASE_URL")
-   }
+1. 注册 Turso 并创建数据库：https://turso.tech
+
+2. 获取数据库 URL 和 Token：
+   ```bash
+   turso db show your-db-name --url
+   turso db tokens create your-db-name
    ```
 
-2. 更新环境变量 `DATABASE_URL`
+3. 更新环境变量：
+   ```
+   DATABASE_URL="libsql://your-db-name.turso.io"
+   TURSO_AUTH_TOKEN="your-token"
+   ```
 
-3. 重新生成并推送：
+4. 推送 schema：
    ```bash
-   npx prisma generate
    npx prisma db push
-   ```
-
-4. 重新运行种子（可选）：
-   ```bash
-   npm run db:seed
    ```
 
 ---

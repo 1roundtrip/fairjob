@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const count = parseInt(searchParams.get("count") || "20", 10);
+  const count = Math.min(Math.max(parseInt(searchParams.get("count") || "20", 10), 1), 50);
 
   try {
     // 获取随机职位（使用 NEWID() 的替代方案）

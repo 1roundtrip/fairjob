@@ -129,8 +129,15 @@ export abstract class BaseCrawler {
       }
 
       for (const disallow of disallows) {
-        if (path.startsWith(disallow.replace(/\*/g, ""))) {
-          return false;
+        const pattern = disallow.replace(/\*/g, ".*");
+        try {
+          if (new RegExp("^" + pattern).test(path)) {
+            return false;
+          }
+        } catch {
+          if (path.startsWith(disallow.replace(/\*/g, ""))) {
+            return false;
+          }
         }
       }
 

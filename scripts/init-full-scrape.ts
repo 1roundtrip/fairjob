@@ -605,6 +605,33 @@ async function main() {
     }
   } catch {}
 
+  // 加载政府公益招聘数据源
+  try {
+    const govPath = path.join(process.cwd(), "data", "government-sources.yaml");
+    if (fs.existsSync(govPath)) {
+      const config = yaml.load(fs.readFileSync(govPath, "utf-8")) as any;
+      const sources = config?.sources || [];
+      for (const src of sources.slice(0, 15)) {
+        const existing = await prisma.source.findFirst({
+          where: { url: src.url },
+        });
+        if (!existing) {
+          await prisma.source.create({
+            data: {
+              name: src.name,
+              url: src.url,
+              type: (src.type as SourceType) || SourceType.OFFICIAL_PLATFORM,
+              parserType: (src.parserType as ParserType) || ParserType.UNIVERSAL,
+              crawlInterval: 1440,
+            },
+          });
+          sourceCreated++;
+          console.log(`  + ${src.name}`);
+        }
+      }
+    }
+  } catch {}
+
   console.log(
     `\n  数据源: 新建 ${sourceCreated}，已有 ${sourceSkipped}`
   );

@@ -501,7 +501,7 @@ export class UniversalJobParser {
     const nonJobPatterns = [
       "首页", "主页", "关于我们", "联系方式", "登录", "注册",
       "下载", "更多", "查看更多", "下一页", "上一页", "第",
-      "javascript:", "#", "mailto:", "tel:",
+      "javascript:", "mailto:", "tel:",
     ];
 
     for (const pattern of nonJobPatterns) {
@@ -509,6 +509,8 @@ export class UniversalJobParser {
         return true;
       }
     }
+
+    if (href === "#") return true;
 
     return false;
   }
@@ -544,8 +546,6 @@ export class UniversalJobParser {
       if (job.educationConfidence >= 0.8) {
         score += 0.1;
       }
-    } else {
-      score -= 0.1;
     }
 
     // 薪资

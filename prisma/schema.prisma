@@ -36,50 +36,8 @@ model Source {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  jobs          Job[]
-  reviewJobs    ReviewJob[]
-
-  @@index([type, isActive])
-  @@index([lastCrawledAt])
+  @@index([lastSeen])
 }
-
-// ==================== 职位模型 (主表) ====================
-
-model Job {
-  id            Int        @id @default(autoincrement())
-  title         String     // 职位名称
-  company       String     // 公司名称
-  location      String?    // 工作地点
-  salary        String?    // 薪资描述
-  salaryMin     Float?     // 最低薪资
-  salaryMax     Float?     // 最高薪资
-  description   String?    // 职位描述
-  requirements  String?    // 任职要求
-
-  // 核心字段: 学历要求 (EducationLevel)
-  education     String     @default("UNKNOWN")
-
-  jobType       String?    // 全职/实习/校招
-  experience    String?    // 工作经验要求
-  publishedAt   DateTime?  // 发布时间
-
-  // 来源与链接
-  sourceId      Int?
-  source        Source?    @relation(fields: [sourceId], references: [id])
-  sourceName    String?    // 来源名称冗余
-  sourceUrl     String     // 原始链接 (唯一去重键)
-
-  // 合并去重相关
-  mergedJobIds  String?    // JSON 字符串，合并的其他职位 ID 列表
-  isMerged      Boolean    @default(false)
-  mergeCount    Int        @default(1)
-
-  // 质量评分
-  confidence    Float      @default(0)
-  failCount     Int        @default(0)
-
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
 
   @@unique([sourceUrl])
   @@index([education])
@@ -117,6 +75,8 @@ model ReviewJob {
   @@index([status])
   @@index([education])
   @@index([createdAt])
+  @@index([sourceId])
+  @@unique([sourceUrl])
 }
 
 // ==================== 抓取日志模型 ====================

@@ -271,9 +271,15 @@ export class RecruitmentPlatformDiscovery {
           continue;
         }
 
+        const searchPrefix = job.company.slice(0, Math.min(4, job.company.length));
+        if (!searchPrefix) {
+          await prisma.job.create({ data: job as any });
+          jobsAdded++;
+          continue;
+        }
         const similarJobs = await prisma.job.findMany({
           where: {
-            company: { contains: job.company.slice(0, Math.min(4, job.company.length)) },
+            company: { contains: searchPrefix },
           },
           take: 10,
         });

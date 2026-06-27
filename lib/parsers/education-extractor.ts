@@ -320,12 +320,16 @@ function checkForConflict(
   );
 
   if (hasBachelor && hasAssociate) {
+    // 同族冲突时取更严格的值（BACHELOR_ONLY > BACHELOR_AND_ABOVE, ASSOCIATE_ONLY > ASSOCIATE_AND_ABOVE）
+    const allCategories = [...titleResults.categories, ...descResults.categories];
+    const strictPriority: EducationLevel[] = ["BACHELOR_ONLY", "ASSOCIATE_ONLY", "BACHELOR_AND_ABOVE", "ASSOCIATE_AND_ABOVE"];
+    const resolved = strictPriority.find((c) => allCategories.includes(c)) || "UNKNOWN";
     return {
-      education: "UNKNOWN",
+      education: resolved,
       matchedKeywords: [...titleResults.allMatched, ...descResults.allMatched],
       hasConflict: true,
       fromDescription: descResults.categories.length > 0,
-      confidence: 0,
+      confidence: 0.6,
     };
   }
 

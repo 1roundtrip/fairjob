@@ -8,7 +8,11 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "未知";
   const d = typeof date === "string" ? new Date(date) : date;
-  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  const now = Date.now();
+  const diff = now - d.getTime();
+
+  if (diff < 0) return "刚刚";
+  const days = Math.floor(diff / 86400000);
 
   if (days === 0) return "今天";
   if (days === 1) return "昨天";

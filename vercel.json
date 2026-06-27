@@ -11,6 +11,10 @@
       "schedule": "0,30 5-22 * * *"
     },
     {
+      "path": "/api/cron/incremental-crawl",
+      "schedule": "0 6-22 * * *"
+    },
+    {
       "path": "/api/cron/education-backfill",
       "schedule": "5 3 * * *"
     },

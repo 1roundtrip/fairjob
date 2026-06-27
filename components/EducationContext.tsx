@@ -21,13 +21,16 @@ interface EducationContextType {
   viewLabel: string;
 }
 
-const EducationContext = createContext<EducationContextType | undefined>(undefined);
+const EducationContext = createContext<EducationContextType>({
+  view: "ALL",
+  setView: () => {},
+  viewLabel: "全部",
+});
 
 export function EducationProvider({ children }: { children: ReactNode }) {
   const [view, setViewState] = useState<EducationView>("ALL");
   const [mounted, setMounted] = useState(false);
 
-  // 从 localStorage 读取保存的视角
   useEffect(() => {
     setMounted(true);
     try {
@@ -56,11 +59,6 @@ export function EducationProvider({ children }: { children: ReactNode }) {
       ? ASSOCIATE_VIEW_LABEL
       : "全部";
 
-  // 避免水合不匹配
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
   return (
     <EducationContext.Provider value={{ view, setView, viewLabel }}>
       {children}
@@ -69,9 +67,5 @@ export function EducationProvider({ children }: { children: ReactNode }) {
 }
 
 export function useEducationView() {
-  const context = useContext(EducationContext);
-  if (context === undefined) {
-    throw new Error("useEducationView must be used within an EducationProvider");
-  }
-  return context;
+  return useContext(EducationContext);
 }
