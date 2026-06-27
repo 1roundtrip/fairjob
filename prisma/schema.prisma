@@ -39,15 +39,6 @@ model Source {
   @@index([lastSeen])
 }
 
-  @@unique([sourceUrl])
-  @@index([education])
-  @@index([publishedAt])
-  @@index([company, title])
-  @@index([sourceId])
-  @@index([createdAt])
-  @@index([confidence])
-}
-
 // ==================== 待审核职位模型 ====================
 
 model ReviewJob {
