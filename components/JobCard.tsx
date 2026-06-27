@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatDate } from "@/lib/utils";
+import { EDUCATION_LABELS } from "@/lib/constants";
 import EducationBadge from "./EducationBadge";
 import FavoriteButton from "./FavoriteButton";
 
@@ -98,7 +99,7 @@ export default function JobCard({ job, className = "" }: JobCardProps) {
           )}
 
           <span className={getEducationTagClass()}>
-            {job.education.replace(/_/g, "").replace("ANDABOVE", "及以上")}
+            {EDUCATION_LABELS[job.education] || job.education}
           </span>
 
           {job.isMerged && job.mergeCount > 1 && (
